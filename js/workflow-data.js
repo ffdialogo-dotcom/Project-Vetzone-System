@@ -150,7 +150,10 @@
         checked = validateReversal(r, decision); if (!checked.ok) return checked;
         Object.keys(checked.additions).forEach(function (batchId) { V.db.batches.filter(function (b) { return b.id === batchId; })[0].qty += checked.additions[batchId]; });
         checked.sale.status = 'voided'; checked.sale.voidedAt = V.nowStr(); checked.sale.reversalId = r.id;
-        r.refundMethod = decision.refundMethod; r.amount = checked.sale.total; r.returnedUnits = Object.keys(checked.additions).reduce(function (n, k) { return n + checked.additions[k]; }, 0);
+        r.refundMethod = decision.refundMethod; r.amount = checked.sale.total;
+        r.returns = (decision.returns || []).map(function (item) { return { lineIndex: Number(item.lineIndex), qty: Number(item.qty), usableConfirmed: item.usableConfirmed === true }; });
+        r.batchReturns = clone(checked.additions);
+        r.returnedUnits = Object.keys(checked.additions).reduce(function (n, k) { return n + checked.additions[k]; }, 0);
       } else return fail('Unsupported request type.');
     }
     r.status = choice === 'approve' ? 'approved' : 'rejected'; r.reviewedBy = me.username; r.reviewedAt = V.nowStr(); r.note = note;

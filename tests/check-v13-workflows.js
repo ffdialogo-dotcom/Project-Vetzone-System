@@ -20,7 +20,7 @@ unchanged(V,()=>V.reviewWorkflow(rq.id,'approve','',{refundConfirmed:true,refund
 ok(V.login('admin','admin123'));unchanged(V,()=>V.reviewWorkflow(rq.id,'approve',''));
 unchanged(V,()=>V.reviewWorkflow(rq.id,'approve','',{refundConfirmed:true,refundMethod:'Cash',returns:[{lineIndex:0,qty:1}]}));
 ok(V.reviewWorkflow(rq.id,'approve','',{refundConfirmed:true,refundMethod:'Cash',returns:[{lineIndex:0,qty:1,usableConfirmed:true}]}));
-assert.equal(V.info(p).sellable,stock-1);assert.equal(JSON.stringify(sale.items),originalItems);assert.equal(sale.status,'voided');
+assert.equal(rq.returns[0].qty,1);assert.equal(Object.values(rq.batchReturns).reduce((s,q)=>s+q,0),1);assert.equal(V.info(p).sellable,stock-1);assert.equal(JSON.stringify(sale.items),originalItems);assert.equal(sale.status,'voided');
 assert.equal(V.aggregate([sale]).n,0);assert.equal(V.aggregate([sale]).net,0);assert.equal(V.salesBetween(V.today(),V.today()).some(s=>s.id===sale.id),false);assert.equal(V.refundsBetween(V.today(),V.today()).length,1);
 unchanged(V,()=>V.reviewWorkflow(rq.id,'approve','',{refundConfirmed:true,refundMethod:'Cash'}));
 const sale2=ok(V.recordSale([{productId:p.id,qty:1}],0,'Online payment')).sale,rq2=ok(V.requestSaleReversal(sale2.id,'Opened and damaged item')).request,beforeZero=V.info(p).sellable;
@@ -67,7 +67,7 @@ unchanged(V,()=>V.changeAppointment(missed.id,'cancel',{reason:'Waiting review'}
 ok(V.reviewRecord(missed.pendingRecordId,'reject','Owner attended another time.'));assert.equal(missed.pendingRecordId,undefined);ok(V.changeAppointment(missed.id,'missed'));assert.equal(missed.status,'missed');
 const dead=V.db.pets[2];ok(V.admitPet(dead.id,'Observation'));const deadAppt=ok(V.bookAppointment({petId:dead.id,date:V.addDays(V.today(),1),time:'09:00',purpose:'Checkup'})).appointment;
 ok(V.requestPetDeath(dead.id,{date:V.today(),location:'At clinic'}));assert.equal(V.activeStay(dead.id),null);assert.equal(deadAppt.status,'cancelled');
-const restored=load(state.memory).V;assert.equal(restored.db.sales.find(s=>s.id===sale.id).status,'voided');assert.equal(restored.db.receivings.at(-1).totalCost,41);assert.equal(restored.db.clinicStays.find(s=>s.petId===pet.id).status,'released');
+const restored=load(state.memory).V;assert.equal(restored.db.sales.find(s=>s.id===sale.id).status,'voided');assert.equal(restored.db.workflowRequests.find(r=>r.id===rq.id).returns[0].qty,1);assert.equal(restored.db.receivings.at(-1).totalCost,41);assert.equal(restored.db.clinicStays.find(s=>s.petId===pet.id).status,'released');
 // Profile attendance uses the same calendar entry; approval alone creates the new schedule.
 clock='2026-10-14T12:00:00';
 const linkedState=load(),L=linkedState.V;ok(L.login('staff1','staff123'));
