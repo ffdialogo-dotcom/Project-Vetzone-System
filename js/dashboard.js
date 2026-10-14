@@ -78,10 +78,13 @@
     var draw = function (days) {
       var pts = [], total = 0, count = 0;
       for (var i = days - 1; i >= 0; i--) {
-        var d = VZ.addDays(today, -i), a = VZ.aggregate(VZ.salesBetween(d, d));
+        var d = VZ.addDays(today, -i), dailySales = VZ.salesBetween(d, d), a = VZ.aggregate(dailySales);
         total += a.net; count += a.n;
         var dt = VZ.parse(d);
-        pts.push({ label: dt.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }), value: a.net, tip: VZ.fmtDate(d) + ': ' + VZ.money(a.net) + ' (' + a.n + ' sales)' });
+        pts.push({ label: dt.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }), value: a.net,
+          tip: VZ.fmtDate(d) + '\n' + a.n + ' sale' + (a.n === 1 ? '' : 's') + ' · ' + a.items + ' item' + (a.items === 1 ? '' : 's') + '\nTotal: ' + VZ.money(a.net),
+          details: dailySales.map(function (s) { return s.no + ' · ' + VZ.money(s.total) + ' · ' + s.method + '\n' + s.items.map(function (l) { return l.qty + ' × ' + l.name; }).join(', '); })
+        });
       }
       VZ.lineChart(document.getElementById('sales-chart'), pts, 'Daily sales for the last ' + days + ' days');
       document.getElementById('sum-total').textContent = VZ.money(total);

@@ -24,7 +24,7 @@
     '<div><span>Discount amount</span><span id="disc-amt"></span></div>' +
     '<div class="grand"><span>Total</span><span id="total"></span></div></div>' +
     '<div class="form-error" id="pay-error" role="alert" hidden style="margin-top:10px"></div>' +
-    '<button class="btn btn-block" type="submit" id="pay-btn" style="margin-top:12px">Record payment</button></form></aside></div>';
+    '<button class="btn btn-block" type="submit" id="pay-btn" style="margin-top:12px">Review sale</button></form></aside></div>';
   }
   main.querySelectorAll('[data-icon]').forEach(function (node) {
     node.outerHTML = VZ.icon(node.getAttribute('data-icon'), Number(node.getAttribute('data-size')) || 18);
@@ -48,7 +48,7 @@
   function renderGrid() {
     var q = state.q.trim().toLowerCase();
     var list = VZ.products().filter(function (p) {
-      return (state.cat === 'All' || p.category === state.cat) && (!q || p.name.toLowerCase().indexOf(q) >= 0);
+      return (state.cat === 'All' || p.category === state.cat) && (!q || p.name.toLowerCase().indexOf(q) >= 0 || (p.displayId || '').toLowerCase().indexOf(q) >= 0);
     }).sort(function (a, b) { return a.name.localeCompare(b.name); });
     if (!list.length) { el.grid.innerHTML = '<p class="empty" style="grid-column:1/-1">No items match your search.</p>'; return; }
     el.grid.innerHTML = list.map(function (p) {
@@ -57,6 +57,7 @@
       var stockText = i.out ? 'Out of stock' : (i.low ? 'Low: ' : 'In stock: ') + i.sellable;
       var tag = i.soon ? '<span class="chip chip-amber">Expiring</span>' : '';
       return '<div class="product"><div class="pic" aria-hidden="true">' + tag + p.emoji + '</div><h3>' + VZ.esc(p.name) + '</h3>' +
+        '<small class="item-code">Item code: ' + VZ.esc(p.displayId || p.id) + '</small>' +
         '<span class="chip chip-grey" style="align-self:flex-start">' + VZ.esc(p.category) + '</span>' +
         '<span class="price">' + VZ.money(p.price) + '</span><span class="stock ' + stockCls + '">' + stockText + '</span>' +
         '<button type="button" class="btn btn-sm btn-block" data-add="' + p.id + '"' + (left <= 0 ? ' disabled' : '') + ' aria-label="Add ' + VZ.esc(p.name) + ' to order">' + VZ.icon('cart', 16) + ' ' + (i.out ? 'Unavailable' : left <= 0 ? 'All in order' : 'Add to order') + '</button></div>';
@@ -125,27 +126,62 @@
   });
   el.disc.addEventListener('input', totals);
 
-  el.form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    el.err.hidden = true;
-    var picked = el.form.querySelector('input[name="method"]:checked');
-    var r = VZ.recordSale(state.cart, el.disc.value, picked ? picked.value : '', user);
-    if (!r.ok) { el.err.textContent = r.error; el.err.hidden = false; refresh(); return; }
-    var s = r.sale;
-    state.cart = [];
-    el.disc.value = '';
-    Array.prototype.forEach.call(el.form.querySelectorAll('input[name="method"]'), function (x) { x.checked = false; });
-    refresh();
-    VZ.refreshBell();
-    var m = VZ.modal('Payment recorded',
+  function showRecorded(s) {
+    var m = VZ.modal('Sale recorded',
       '<p><b>Sale ' + VZ.esc(s.no) + '</b> was saved and stock was updated.</p><ul class="receipt-list">' +
       s.items.map(function (l) { return '<li><span>' + l.qty + ' x ' + VZ.esc(l.name) + '</span><span>' + VZ.money(l.price * l.qty) + '</span></li>'; }).join('') +
       '</ul><ul class="receipt-list"><li><span>Subtotal</span><span>' + VZ.money(s.subtotal) + '</span></li>' +
       (s.discount ? '<li><span>Discount (' + s.discountPct + '%)</span><span>- ' + VZ.money(s.discount) + '</span></li>' : '') +
-      '<li><b>Total</b><b>' + VZ.money(s.total) + '</b></li><li><span>Paid by</span><span>' + VZ.esc(s.method) + '</span></li></ul>' +
+      '<li><b>Total</b><b>' + VZ.money(s.total) + '</b></li><li><span>Paid by</span><span>' + VZ.esc(s.method) + '</span></li>' +
+      (s.method === 'Cash' ? '<li><span>Cash received</span><span>' + VZ.money(s.cashReceived) + '</span></li><li><b>Customer change</b><b id="recorded-change">' + VZ.money(s.change) + '</b></li>' : '') + '</ul>' +
       '<p class="note">This is an internal sales record. It is not an official receipt.</p>' +
       '<div class="modal-actions"><button type="button" class="btn" data-done>Start a new sale</button></div>');
     m.body.querySelector('[data-done]').addEventListener('click', m.close);
+  }
+
+  el.form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    el.err.hidden = true;
+    var picked = el.form.querySelector('input[name="method"]:checked');
+    var cart = state.cart.map(function (l) { return { productId: l.productId, qty: l.qty }; });
+    var prepared = VZ.prepareSale(cart, el.disc.value, picked ? picked.value : '');
+    if (!prepared.ok) { el.err.textContent = prepared.error; el.err.hidden = false; refresh(); return; }
+    var t = prepared.totals, isCash = prepared.method === 'Cash';
+    var m = VZ.modal('Confirm sale record', '<form id="confirm-sale-form" novalidate>' +
+      '<p class="caption">Check the items and payment before recording this sale.</p><ul class="receipt-list">' +
+      prepared.lines.map(function (l) { return '<li><span>' + l.qty + ' x ' + VZ.esc(l.name) + '</span><span>' + VZ.money(l.price * l.qty) + '</span></li>'; }).join('') +
+      '</ul><ul class="receipt-list"><li><span>Subtotal</span><span>' + VZ.money(t.subtotal) + '</span></li>' +
+      '<li><span>Discount (' + prepared.discountPct + '%)</span><span>- ' + VZ.money(t.discount) + '</span></li>' +
+      '<li><b>Total</b><b id="confirmation-total">' + VZ.money(t.total) + '</b></li>' +
+      '<li><span>Payment method</span><span>' + VZ.esc(prepared.method) + '</span></li></ul>' +
+      (isCash ? VZ.field('Cash received from customer', 'cashReceived', '<input class="input" id="cash-received" name="cashReceived" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">') +
+        '<div class="change-summary"><span>Customer change</span><strong id="change-due" aria-live="polite">—</strong></div>' :
+        '<p class="note">Confirm that the online payment has been received.</p>') +
+      '<div class="modal-actions"><button type="button" class="btn btn-ghost" data-back>Back to order</button><button type="submit" class="btn" id="confirm-sale">Confirm and record sale</button></div></form>');
+    var form = m.body.querySelector('form'), busy = false;
+    m.body.querySelector('[data-back]').addEventListener('click', m.close);
+    if (isCash) {
+      form.elements.cashReceived.addEventListener('input', function () {
+        var payment = VZ.cashPayment(t.total, form.elements.cashReceived.value);
+        m.body.querySelector('#change-due').textContent = payment.ok ? VZ.money(payment.change) : '—';
+      });
+    }
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (busy) return;
+      busy = true;
+      var options = { expectedTotal: t.total, cashReceived: isCash ? form.elements.cashReceived.value : null };
+      var r = VZ.recordSale(cart, prepared.discountPct, prepared.method, options);
+      if (!r.ok) { busy = false; VZ.showFormError(form, r.error); return; }
+      form.querySelector('#confirm-sale').disabled = true;
+      m.close();
+      state.cart = [];
+      el.disc.value = '';
+      Array.prototype.forEach.call(el.form.querySelectorAll('input[name="method"]'), function (x) { x.checked = false; });
+      refresh();
+      VZ.refreshBell();
+      showRecorded(r.sale);
+    });
   });
 
   renderCats();

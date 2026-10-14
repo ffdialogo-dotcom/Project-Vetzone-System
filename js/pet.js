@@ -101,6 +101,7 @@
     var requests = VZ.petDeathRequests().filter(function (r) { return r.petId === pet.id; });
     var pendingDeath = requests.some(function (r) { return r.status === 'pending'; });
     document.getElementById('pet-death-requests').innerHTML = pendingDeath ? '<p class="note">Deceased status request is pending admin approval. The pet status has not changed.</p>' : '';
+    document.getElementById('request-deceased').textContent = isAdmin ? 'Mark as deceased' : 'Request deceased status';
     document.getElementById('request-deceased').hidden = pet.status === 'Deceased' || pendingDeath;
 
     document.getElementById('pet-due-note').innerHTML = dueNote;
@@ -161,18 +162,18 @@
     render();
   });
   document.getElementById('request-deceased').onclick = function () {
-    var m = VZ.modal('Request deceased status for ' + pet.name,
-      '<form id="death-request-form" novalidate><p class="note">Only an admin can confirm this status. Existing records are preserved.</p>' +
+    var m = VZ.modal((isAdmin ? 'Confirm deceased status for ' : 'Request deceased status for ') + pet.name,
+      '<form id="death-request-form" novalidate><p class="note">' + (isAdmin ? 'Confirming marks this pet as deceased immediately. Existing records are preserved.' : 'An admin must approve this request. Existing records are preserved.') + '</p>' +
       VZ.field('Date of death', 'date', '<input class="input" type="date" name="date" min="' + VZ.esc(pet.birth || '') + '" max="' + VZ.today() + '" value="' + VZ.today() + '">') +
       VZ.field('Location', 'location', '<select class="select" name="location"><option value="">Select location</option><option>At clinic</option><option>Outside clinic</option><option>Unknown</option></select>') +
       VZ.field('Notes (optional)', 'notes', '<textarea class="textarea" name="notes" maxlength="500"></textarea>', 'Record only confirmed details; do not guess the cause of death.') +
-      '<div class="modal-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button class="btn" type="submit">Send for approval</button></div></form>');
+      '<div class="modal-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button class="btn" type="submit">' + (isAdmin ? 'Confirm deceased status' : 'Send for approval') + '</button></div></form>');
     var form = m.body.querySelector('form');
     m.body.querySelector('[data-cancel]').addEventListener('click', m.close);
     form.addEventListener('submit', function (e) {
       e.preventDefault(); var result = VZ.requestPetDeath(pet.id, VZ.formData(form));
       if (!result.ok) { VZ.showErrors(form, result.errors || {}); if (result.error) VZ.showFormError(form, result.error); return; }
-      m.close(); VZ.toast('Request sent to admin for approval.'); render(); VZ.refreshNavBadges();
+      m.close(); VZ.toast(result.pending ? 'Request sent to admin for approval.' : pet.name + ' was marked as deceased.'); render(); VZ.refreshNavBadges();
     });
   };
   document.getElementById('add-rec').addEventListener('click', openVaccination);

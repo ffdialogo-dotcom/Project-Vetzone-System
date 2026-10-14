@@ -6,7 +6,7 @@ const ctx = { window: {}, localStorage: store, sessionStorage: store, Date, Math
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../js/app.js'), 'utf8'), ctx);
 const VZ = ctx.window.VZ;
-assert.ok(VZ.db.users.every(u => /^STF-\d{4,}$/.test(u.displayId)));
+assert.ok(VZ.db.users.every(u => /^(ADM|STF)-\d{4,}$/.test(u.displayId) && u.displayId.startsWith(u.role === 'admin' ? 'ADM-' : 'STF-')));
 assert.ok(VZ.db.products.every(p => /^ITM-\d{4,}$/.test(p.displayId)));
 assert.equal(new Set(VZ.db.users.map(u => u.displayId)).size, VZ.db.users.length);
 assert.equal(new Set(VZ.db.products.map(p => p.displayId)).size, VZ.db.products.length);

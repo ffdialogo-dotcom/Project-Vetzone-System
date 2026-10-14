@@ -336,26 +336,36 @@
       if (!storageWarned) { storageWarned = true; alert('This browser is blocking storage, so changes will not be saved after you leave this page.'); }
     }
   };
-  VZ.resetDemo = function () { VZ.db = seed(); VZ.save(); };
+  VZ.resetDemo = function () { VZ.db = migrate(seed()); VZ.save(); };
   // Older saved data from earlier versions gets the new parts it needs.
   function migrate(db) {
     db.requests = db.requests || [];
     db.audit = db.audit || [];
     db.petStatusRequests = db.petStatusRequests || [];
-    // Assign permanent, human-readable IDs to existing and newly created records.
+    // Keep internal IDs unchanged and give each role its own display-ID sequence.
+    db.seq = db.seq || { sale: 0 };
+    db.seq.display = db.seq.display || {};
     function assign(list, prefix) {
-      var max = 0;
-      list.forEach(function (item) { var m = new RegExp('^' + prefix + '-(\\d+)$').exec(item.displayId || ''); if (m) max = Math.max(max, Number(m[1])); });
-      list.forEach(function (item) { if (!item.displayId) item.displayId = prefix + '-' + String(++max).padStart(4, '0'); });
+      var max = Number(db.seq.display[prefix]) || 0, seen = {};
+      var pattern = new RegExp('^' + prefix + '-(\\d{4,})$');
+      list.forEach(function (item) { var m = pattern.exec(item.displayId || ''); if (m) max = Math.max(max, Number(m[1])); });
+      list.forEach(function (item) {
+        if (!pattern.test(item.displayId || '') || seen[item.displayId]) item.displayId = prefix + '-' + String(++max).padStart(4, '0');
+        seen[item.displayId] = true;
+      });
+      db.seq.display[prefix] = max;
     }
-    assign(db.users, 'STF'); assign(db.products, 'ITM');
+    assign(db.users.filter(function (u) { return u.role === 'admin'; }), 'ADM');
+    assign(db.users.filter(function (u) { return u.role === 'staff'; }), 'STF');
+    assign(db.products, 'ITM');
     db.users.forEach(function (u) { if (!u.seen) u.seen = {}; });
     return db;
   }
   VZ.db = migrate(loadDB() || seed());
   VZ.nextDisplayId = function (list, prefix) {
-    var max = 0;
+    var max = Number(VZ.db.seq.display[prefix]) || 0;
     list.forEach(function (x) { var m = new RegExp('^' + prefix + '-(\\d+)$').exec(x.displayId || ''); if (m) max = Math.max(max, Number(m[1])); });
+    VZ.db.seq.display[prefix] = max + 1;
     return prefix + '-' + String(max + 1).padStart(4, '0');
   };
   VZ.save();
@@ -754,7 +764,7 @@
     var discount = VZ.round2(subtotal * d / 100);
     return { subtotal: subtotal, discount: discount, total: VZ.round2(subtotal - discount) };
   };
-  VZ.recordSale = function (items, discountPct, method) {
+  VZ.prepareSale = function (items, discountPct, method) {
     var user = actor(); if (!user) return needSignIn(); if (!VZ.can('sales.record')) return denied();
     if (!items || !items.length) return { ok: false, error: 'Add at least one item to the order.' };
     if (VZ.PAYMENT_METHODS.indexOf(method) < 0) return { ok: false, error: 'Choose a payment method.' };
@@ -773,11 +783,31 @@
       lines.push({ productId: p.id, name: p.name, price: p.price, qty: q });
     }
     var t = VZ.cartTotals(lines, disc);
+    return { ok: true, lines: lines, totals: t, discountPct: disc, method: method };
+  };
+  VZ.cashPayment = function (total, received) {
+    if (received == null || String(received).trim() === '') return { ok: false, error: 'Enter the cash received from the customer.' };
+    var amount = Number(received), cents = amount * 100;
+    if (!isFinite(amount) || amount < 0 || !Number.isSafeInteger(Math.round(cents)) || Math.abs(cents - Math.round(cents)) > 0.000001) {
+      return { ok: false, error: 'Enter a valid cash amount with at most two decimal places.' };
+    }
+    amount = VZ.round2(amount);
+    if (amount < total) return { ok: false, error: 'Cash received must cover the total.' };
+    return { ok: true, cashReceived: amount, change: VZ.round2(amount - total) };
+  };
+  VZ.recordSale = function (items, discountPct, method, payment) {
+    var prepared = VZ.prepareSale(items, discountPct, method);
+    if (!prepared.ok) return prepared;
+    payment = payment || {};
+    var user = actor(), lines = prepared.lines, t = prepared.totals, disc = prepared.discountPct;
+    if (payment.expectedTotal != null && payment.expectedTotal !== t.total) return { ok: false, error: 'The order total changed. Go back and review the sale again.' };
+    var cash = method === 'Cash' ? VZ.cashPayment(t.total, payment.cashReceived) : { ok: true, cashReceived: null, change: null };
+    if (!cash.ok) return cash;
     lines.forEach(function (l) { deduct(l.productId, l.qty); });
     VZ.db.seq.sale++;
     var sale = {
       id: 's' + VZ.db.seq.sale, no: 'S-' + pad4(VZ.db.seq.sale), ts: VZ.nowStr(), items: lines,
-      discountPct: disc, discount: t.discount, subtotal: t.subtotal, total: t.total, method: method, by: user.username
+      discountPct: disc, discount: t.discount, subtotal: t.subtotal, total: t.total, method: method, by: user.username, cashReceived: cash.cashReceived, change: cash.change
     };
     VZ.db.sales.push(sale);
     var n = 0;
@@ -931,11 +961,17 @@
     if (notes.length > 500) errors.notes = 'Keep notes within 500 characters.';
     if (Object.keys(errors).length) return { ok: false, errors: errors };
     if (VZ.db.petStatusRequests.some(function (r) { return r.petId === petId && r.status === 'pending'; })) return { ok: false, error: 'A death status request for this pet is already pending.' };
-    var r = { id: VZ.uid('pd'), petId: petId, date: date, location: location, notes: notes, status: 'pending', by: me.username, byId: me.id, at: VZ.nowStr(), reviewedBy: '', reviewedAt: '', note: '' };
+    var direct = me.role === 'admin';
+    var r = { id: VZ.uid('pd'), petId: petId, date: date, location: location, notes: notes, status: direct ? 'approved' : 'pending', by: me.username, byId: me.id, at: VZ.nowStr(), reviewedBy: direct ? me.username : '', reviewedAt: '', note: '', auto: direct };
+    if (direct) {
+      r.reviewedAt = r.at;
+      pet.status = 'Deceased';
+      pet.deceased = { date: date, location: location, notes: notes, approvedBy: me.username, approvedAt: r.at };
+    }
     VZ.db.petStatusRequests.push(r);
-    VZ.log('pet', 'Requested deceased status for ' + pet.name + ' (pending admin approval)', me);
-    VZ.audit('pet.deceased.submit', pet.name, 'Death status request submitted', me);
-    VZ.save(); return { ok: true, request: r };
+    VZ.log('pet', direct ? 'Marked ' + pet.name + ' as deceased' : 'Requested deceased status for ' + pet.name + ' (pending admin approval)', me);
+    VZ.audit(direct ? 'pet.deceased.approved' : 'pet.deceased.submit', pet.name, direct ? 'Deceased status recorded directly by admin' : 'Death status request submitted', me);
+    VZ.save(); return { ok: true, request: r, pending: !direct };
   };
   VZ.reviewPetDeath = function (id, decision, note) {
     var me = actor(); if (!me) return needSignIn(); if (me.role !== 'admin') return denied();
@@ -1133,7 +1169,7 @@
     var extra = checkProfileFields(d, err);
     if (Object.keys(err).length) return { ok: false, errors: err };
     var u = {
-      id: VZ.uid('u'), displayId: VZ.nextDisplayId(VZ.db.users, 'STF'), username: uname, name: name, role: role, passHash: VZ.hash(uname, d.password), active: !pending, pending: !!pending, created: VZ.today(),
+      id: VZ.uid('u'), displayId: VZ.nextDisplayId(VZ.db.users, role === 'admin' ? 'ADM' : 'STF'), username: uname, name: name, role: role, passHash: VZ.hash(uname, d.password), active: !pending, pending: !!pending, created: VZ.today(),
       email: extra.email, phone: extra.phone, gender: extra.gender, dob: extra.dob, address: extra.address, idNumber: extra.idNumber, startDate: VZ.today(), photo: '', seen: {}
     };
     VZ.db.users.push(u);
@@ -1226,6 +1262,7 @@
     if (u.role === 'admin' && u.active && activeAdminsExcept(u.id) < 1) return { ok: false, error: 'There must always be at least one active admin.' };
     var from = u.role;
     u.role = newRole;
+    u.displayId = VZ.nextDisplayId(VZ.db.users, newRole === 'admin' ? 'ADM' : 'STF');
     VZ.log('staff', 'Changed the role of ' + u.name + ' to ' + newRole, me);
     VZ.audit('role.change', u.name, from + ' to ' + newRole, me);
     VZ.save();
@@ -1498,10 +1535,39 @@
     svg += '<path d="' + area + '" fill="#ff5fa2" fill-opacity="0.12"/><path d="' + path + '" fill="none" stroke="#c8266f" stroke-width="2.5" stroke-linejoin="round"/>';
     var every = Math.ceil(pts.length / 7);
     pts.forEach(function (p, i) {
-      svg += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.value).toFixed(1) + '" r="4" fill="#fff" stroke="#c8266f" stroke-width="2"><title>' + VZ.esc(p.tip) + '</title></circle>';
+      svg += '<g class="chart-point" data-chart-point="' + i + '" tabindex="0" role="button" aria-label="' + VZ.esc(p.tip) + '">' +
+        '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.value).toFixed(1) + '" r="12" fill="transparent"/>' +
+        '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.value).toFixed(1) + '" r="4" fill="#fff" stroke="#c8266f" stroke-width="2"/></g>';
       if (i % every === 0 || i === pts.length - 1) svg += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 12) + '" text-anchor="middle">' + VZ.esc(p.label) + '</text>';
     });
-    el.innerHTML = svg + '</svg>';
+    var tooltipId = (el.id || 'sales-chart') + '-tooltip';
+    el.classList.add('chart-with-details');
+    el.innerHTML = svg + '</svg><div class="chart-tooltip" id="' + tooltipId + '" role="tooltip" hidden><div class="chart-tooltip-content"></div><button type="button" class="btn btn-ghost btn-sm" aria-label="Close sales details">Close</button></div>';
+    var tooltip = el.querySelector('.chart-tooltip'), pinned = false;
+    function hide() { tooltip.hidden = true; pinned = false; }
+    function show(point, index) {
+      var p = pts[index];
+      tooltip.querySelector('.chart-tooltip-content').textContent = p.tip + (p.details && p.details.length ? '\n\n' + p.details.join('\n\n') : '\nNo sales recorded for this date.');
+      tooltip.hidden = false;
+      var host = el.getBoundingClientRect(), dot = point.getBoundingClientRect();
+      tooltip.style.left = Math.max(0, Math.min(dot.left - host.left - tooltip.offsetWidth / 2, el.clientWidth - tooltip.offsetWidth)) + 'px';
+      tooltip.style.top = (dot.bottom - host.top + 8) + 'px';
+    }
+    el.querySelectorAll('[data-chart-point]').forEach(function (point) {
+      var index = Number(point.getAttribute('data-chart-point'));
+      point.setAttribute('aria-describedby', tooltipId);
+      point.addEventListener('pointerenter', function () { if (!pinned) show(point, index); });
+      point.addEventListener('focus', function () { show(point, index); });
+      point.addEventListener('blur', function (event) { if (!pinned && !tooltip.contains(event.relatedTarget)) hide(); });
+      point.addEventListener('click', function () { pinned = true; show(point, index); });
+      point.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); pinned = true; show(point, index); }
+        if (event.key === 'Escape') hide();
+      });
+    });
+    tooltip.querySelector('button').addEventListener('click', hide);
+    el.onpointerleave = function () { if (!pinned) hide(); };
+    el.onkeydown = function (event) { if (event.key === 'Escape') hide(); };
   };
   VZ.donut = function (el, segs, total, label) {
     var R = 70, C = 2 * Math.PI * R, sum = 0, off = 0;

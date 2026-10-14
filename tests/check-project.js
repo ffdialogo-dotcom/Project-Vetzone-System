@@ -30,7 +30,7 @@ const product = VZ.db.products.find(p => VZ.info(p).sellable >= 2);
 assert.ok(product, 'Need a product with at least two sellable units');
 const stockBefore = VZ.info(product).sellable;
 const salesBefore = VZ.db.sales.length;
-const result = VZ.recordSale([{ productId: product.id, qty: 2 }], 0, 'Cash');
+const result = VZ.recordSale([{ productId: product.id, qty: 2 }], 0, 'Cash', { cashReceived: product.price * 2 });
 assert.equal(result.ok, true, result.error || 'Sale should succeed');
 assert.equal(VZ.info(product).sellable, stockBefore - 2, 'Recorded sale should deduct stock');
 assert.equal(VZ.db.sales.length, salesBefore + 1, 'Sale history should gain a record');

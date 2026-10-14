@@ -1,41 +1,44 @@
-Validation of the corrected uploaded project (October 14, 2026)
+Validation of the updated VetZone workflows (October 14, 2026)
 
 PASS: tests/check-project.js
-  13 application JavaScript files parsed; 59 local HTML links checked.
-  Seed data, helpers, sale recording, stock deduction and overselling rejection.
+  13 application JavaScript files parsed; 59 local HTML asset links checked.
+  Seed data/helpers, sale recording, stock deduction, overselling rejection.
 PASS: tests/check-archive.js
-  Archive, restore, staff restriction, duplicate restore, batches and audit log.
+  Archive/restore, staff restriction, duplicate restore, batches and audit.
 PASS: tests/check-static-pages.js
-  Three converted static interfaces and their main-page behavior.
+  Three converted static interfaces.
 PASS: tests/check-feature-ids-deceased.js
-  Staff/item IDs, deceased submission, permissions, approval/rejection,
-  duplicate guards, audit and reminder suppression.
-PASS: tests/check-death-date-validation.js (new regression test)
-  10 invalid submission cases; valid birth-date/today/leap-day boundaries;
-  10 persisted invalid requests blocked at approval without state mutations;
-  invalid legacy requests remain rejectable with an explanatory note.
-PASS: tests/check-pet-browser.js (new Chromium regression/smoke test)
-  Invalid login and staff/admin login; role-specific dashboards;
-  staff/item ID rendering; pending deceased requests; staff review restriction;
-  duplicate pending-request guard; admin approval/rejection; rejection notes;
-  reload persistence; preserved medical history; suppressed deceased reminders;
-  deceased grid/list filtering; staff visibility of rejection notes;
-  all application pages, account-page rendering and logout.
-  One Add visit click opens one dialog after a deceased request and repeated renders.
-  One visit submission produces exactly one record.
-  Each treatment-status change adds exactly one activity entry.
-  Pre-birth death dates rejected through the actual HTML form.
-  No uncaught browser errors during this check.
+  Role-specific ADM/STF IDs, item IDs, staff deceased request permissions,
+  approval/rejection, duplicate guards, audit and reminder suppression.
+PASS: tests/check-death-date-validation.js
+  Invalid calendar dates, pre-birth/future dates, valid boundaries/leap day;
+  bad saved requests blocked at approval without mutations and still rejectable.
+PASS: tests/check-workflows.js
+  Direct admin deceased recording; staff approval requirement; role ID changes;
+  migration, reload persistence and ID sequences; sale review without writes;
+  invalid/insufficient cash; exact cash/zero total; discounted change calculation;
+  changed-total guard; final stock deduction; online sales and saved cash data.
+PASS: tests/check-pet-browser.js
+  Staff/admin login and role views, ID rendering, staff deceased submission;
+  duplicate and permission guards, admin approval/rejection, rejection notes;
+  persistence, medical history preservation, reminder suppression;
+  deceased filters, all application pages, logout and no uncaught errors.
+  One visit dialog/record after repeated renders; pre-birth dates rejected.
+PASS: tests/check-workflows-browser.js
+  Admin direct deceased confirmation, cancellation, immediate status and reload.
+  Staff/admin profile ID prefixes; labeled inventory codes and code search.
+  Cash/online final sale review; cancellation without writes; cash validation;
+  live customer change; duplicate final submission creates only one sale;
+  stock/cash persistence; chart hover/focus/keyboard/date-range details.
+  Inventory code and sale confirmation visibility at a 375px mobile viewport.
+  No uncaught browser errors during these checks.
 
-PASS: additional existing-data migration check against /workspace/test baseline.
-  Existing records and internal IDs preserved; staff/item display IDs remain
-  stable on reload; newly created staff and items receive unique display IDs.
+PASS: migration using the actual previous release's app.js and saved data.
+  All products, batches, sales, pets, owners, records, inventory requests,
+  deceased requests and audit data preserved. Staff/item codes stay stable.
+  Only admin display prefixes and display-sequence metadata change.
 
-Regression sensitivity confirmed: the new death-date test fails on the
-unmodified supplied ZIP because 2026-02-30 is accepted there.
-
-The browser check used a fresh isolated profile and blocked optional Google
-font requests to exercise the documented offline font fallback.
-Full manual checklist, every responsive viewport, and production/backend
-security testing are outside this validation. This remains a browser-storage
-prototype, as described in README.md.
+Browser checks used isolated profiles and blocked optional Google font
+requests, exercising the documented offline font fallback.
+Full manual checklist, every viewport/browser and production/backend security
+were not validated. This remains the browser-storage prototype in README.md.

@@ -22,12 +22,12 @@
     main.innerHTML = '<div class="stat-grid" id="inv-stats"></div><div id="proposals"></div>' +
     '<div class="inventory-view-tabs status-tabs no-print" role="tablist" aria-label="Inventory views"><button type="button" role="tab" id="inv-active-tab" aria-selected="true" aria-controls="inv-table-region" data-view="active">Active Items</button><button type="button" role="tab" id="inv-archived-tab" aria-selected="false" aria-controls="inv-table-region" data-view="archived">Archived Items</button></div>' +
     '<div class="toolbar no-print">' +
-    '<label class="search">' + VZ.icon('search', 18) + '<span class="sr-only">Search items</span><input id="q" type="search" placeholder="Search items" value="' + VZ.esc(state.q) + '"></label>' +
+    '<label class="search">' + VZ.icon('search', 18) + '<span class="sr-only">Search items</span><input id="q" type="search" placeholder="Search item name or code" value="' + VZ.esc(state.q) + '"></label>' +
     '<label><span class="sr-only">Category</span><select class="select" id="cat"><option value="All">All categories</option>' + VZ.CATEGORIES.map(function (c) { return '<option>' + c + '</option>'; }).join('') + '</select></label>' +
     '<label><span class="sr-only">Status</span><select class="select" id="status"><option value="All">All statuses</option><option value="in">In stock</option><option value="low">Low stock</option><option value="expiring">Expiring or expired</option><option value="out">Out of stock</option></select></label>' +
     '<label><span class="sr-only">Sort by</span><select class="select" id="sort"><option value="name">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="qty">Lowest stock first</option><option value="expiry">Soonest expiry first</option><option value="price">Highest price first</option></select></label>' +
     '<button type="button" class="btn" id="add-item">' + VZ.icon('plus', 18) + ' Add item</button></div>' +
-    '<div id="inv-table-region" role="tabpanel" aria-labelledby="inv-active-tab"><div class="table-wrap"><table class="table"><caption class="sr-only">Official inventory</caption><thead><tr><th scope="col">Item</th><th scope="col">Category</th><th scope="col" class="num">Price</th><th scope="col" class="num">In stock</th><th scope="col">Next expiry</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody id="rows"></tbody></table></div>' +
+    '<div id="inv-table-region" role="tabpanel" aria-labelledby="inv-active-tab"><div class="table-wrap"><table class="table"><caption class="sr-only">Official inventory</caption><thead><tr><th scope="col">Item code</th><th scope="col">Item</th><th scope="col">Category</th><th scope="col" class="num">Price</th><th scope="col" class="num">In stock</th><th scope="col">Next expiry</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody id="rows"></tbody></table></div>' +
     '<div class="table-foot"><span id="showing"></span><div class="pager" id="pager"></div></div></div>';
   }
   main.querySelectorAll('[data-icon]').forEach(function (node) {
@@ -69,7 +69,7 @@
   function filtered() {
     var q = state.q.trim().toLowerCase();
     var list = VZ.products(true).filter(function (p) { return state.view === 'archived' ? !!p.archived : !p.archived; }).map(function (p) { return { p: p, i: VZ.info(p) }; }).filter(function (x) {
-      if (q && x.p.name.toLowerCase().indexOf(q) < 0 && x.p.category.toLowerCase().indexOf(q) < 0) return false;
+      if (q && x.p.name.toLowerCase().indexOf(q) < 0 && x.p.category.toLowerCase().indexOf(q) < 0 && (x.p.displayId || '').toLowerCase().indexOf(q) < 0) return false;
       if (state.cat !== 'All' && x.p.category !== state.cat) return false;
       if (state.status === 'in') return !x.i.low && !x.i.expiring && !x.i.out;
       if (state.status === 'low') return x.i.low;
@@ -104,13 +104,13 @@
     if (state.page > pages) state.page = pages;
     var start = (state.page - 1) * PAGE_SIZE, slice = list.slice(start, start + PAGE_SIZE);
     if (!slice.length) {
-      el.rows.innerHTML = '<tr><td colspan="7" class="empty">' + (state.view === 'archived' ? 'No archived items match your search.' : 'No items match your search. Clear the filters or add a new item.') + '</td></tr>';
+      el.rows.innerHTML = '<tr><td colspan="8" class="empty">' + (state.view === 'archived' ? 'No archived items match your search.' : 'No items match your search. Clear the filters or add a new item.') + '</td></tr>';
     } else {
       el.rows.innerHTML = slice.map(function (x) {
         var p = x.p, i = x.i;
         var exp = i.nextExpiry ? VZ.fmtDate(i.nextExpiry) : (i.expired ? 'Expired' : 'No expiry');
         var pend = pendingBy[p.id] ? ' <span class="chip chip-grey" title="A change to this item is waiting for admin approval">Change pending</span>' : '';
-        return '<tr><td><span class="item-cell"><span class="thumb" aria-hidden="true">' + p.emoji + '</span><span>' + VZ.esc(p.name) + '<br><small>' + VZ.esc(p.displayId || p.id) + '</small>' + pend + '</span></span></td>' +
+        return '<tr><td class="item-code nowrap">' + VZ.esc(p.displayId || p.id) + '</td><td><span class="item-cell"><span class="thumb" aria-hidden="true">' + p.emoji + '</span><span>' + VZ.esc(p.name) + pend + '</span></span></td>' +
           '<td>' + VZ.esc(p.category) + '</td><td class="num nowrap">' + VZ.money(p.price) + '</td><td class="num">' + i.sellable + '</td><td class="nowrap">' + exp + '</td>' +
           '<td>' + (state.view === 'archived' ? '<span class="chip chip-grey">Archived</span>' : VZ.chipsHTML(VZ.chips(i))) + '</td>' +
           '<td><span class="row-actions">' + (state.view === 'archived' ?

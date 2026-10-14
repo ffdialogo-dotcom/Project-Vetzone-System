@@ -1,9 +1,9 @@
-# Corrected VetZone update
+# Updated VetZone project
 
-The complete corrected application is now at the repository root on this branch. Downloading this branch with GitHub's **Code > Download ZIP** gives the updated application directly; extract the download and open the root `index.html`.
+The complete current application is at the root of this branch. Use **Code > Download ZIP**, extract it, and open the root `index.html`. No inner ZIP needs to be extracted.
 
-The optional standalone `VetZone_Staff_Item_ID_Deceased_Approval_Update_FIXED.zip` in this folder also contains the corrected application. You do not need it when using the root application.
+The standalone `VetZone_Staff_Item_ID_Deceased_Approval_Update_FIXED.zip` is an optional copy of the same current application, with the same scripts, tests, and documentation.
 
-The root application includes staff/item IDs, deceased-status submission and admin approval/rejection, preserved pet history, suppressed deceased reminders, and the fixes for duplicate visit dialogs and invalid death dates. All six checks, including Chromium browser tests, are included or documented in the root project.
+This update includes direct admin deceased confirmation, staff approval requests, final sale confirmation with cash received/customer change, ADM/STF role IDs, visible/searchable ITM item codes, and detailed chart-dot hover panels. All eight checks passed, including both Chromium suites. See the root VALIDATION_RESULTS.txt.
 
-This delivery branch does not change main.
+The main branch is unchanged.
