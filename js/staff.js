@@ -10,7 +10,7 @@
     document.getElementById('staff-rows').innerHTML =
       VZ.db.users.map(function (u) {
         var self = u.id === user.id;
-        return '<tr><td><b>' + VZ.esc(u.name) + '</b>' + (self ? ' <span class="chip chip-grey">You</span>' : '') + '</td><td>' + VZ.esc(u.username) + '</td><td><span class="chip ' + (u.role === 'admin' ? 'chip-blue' : 'chip-grey') + '">' + (u.role === 'admin' ? 'Admin' : 'Staff') + '</span></td>' +
+        return '<tr><td><b>' + VZ.esc(u.name) + '</b><br><small>' + VZ.esc(u.displayId || u.id) + '</small>' + '</b>' + (self ? ' <span class="chip chip-grey">You</span>' : '') + '</td><td>' + VZ.esc(u.username) + '</td><td><span class="chip ' + (u.role === 'admin' ? 'chip-blue' : 'chip-grey') + '">' + (u.role === 'admin' ? 'Admin' : 'Staff') + '</span></td>' +
           '<td><span class="chip ' + (u.pending ? 'chip-amber' : u.active ? 'chip-green' : 'chip-grey') + '">' + (u.pending ? 'Waiting for approval' : u.active ? 'Active' : 'Turned off') + '</span></td><td>' + VZ.fmtDate(u.created) + '</td>' +
           (u.pending
             ? '<td><span class="row-actions wrap"><button type="button" class="btn btn-sm" data-approve="' + u.id + '">Approve</button><button type="button" class="btn btn-ghost btn-sm" data-reject="' + u.id + '">Reject</button></span></td></tr>'

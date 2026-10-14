@@ -41,7 +41,7 @@
   function render() {
     var initial = user.name.trim().charAt(0).toUpperCase();
     document.getElementById('me-avatar').innerHTML = user.photo ? '<img src="' + VZ.esc(user.photo) + '" alt="Your profile picture">' : VZ.esc(initial);
-    document.getElementById('me-name').textContent = user.name;
+    document.getElementById('me-name').textContent = user.name + ' (' + (user.displayId || user.id) + ')';
     document.getElementById('me-role').innerHTML = '<span class="chip ' + (user.role === 'admin' ? 'chip-blue' : 'chip-green') + '">' + (user.role === 'admin' ? 'Admin' : 'Staff') + '</span>';
     document.getElementById('me-email').textContent = user.email || 'Not added';
     document.getElementById('me-phone').textContent = user.phone || 'Not added';

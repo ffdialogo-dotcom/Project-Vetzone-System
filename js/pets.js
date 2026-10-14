@@ -11,7 +11,7 @@
     // Fallback for older HTML copies.
     main.innerHTML = '<div class="toolbar"><label class="search">' + VZ.icon('search', 18) + '<span class="sr-only">Search pets or owners</span><input id="q" type="search" placeholder="Search by pet or owner name"></label>' +
     '<label><span class="sr-only">Species</span><select class="select" id="species"><option value="All">All pets</option><option>Dog</option><option>Cat</option></select></label>' +
-    '<label><span class="sr-only">Status</span><select class="select" id="status"><option value="All">All statuses</option><option>Healthy</option><option>Vaccination Due</option><option>Checkup Due</option><option>In Treatment</option></select></label>' +
+    '<label><span class="sr-only">Status</span><select class="select" id="status"><option value="All">All statuses</option><option>Healthy</option><option>Vaccination Due</option><option>Checkup Due</option><option>In Treatment</option><option>Deceased</option></select></label>' +
     '<label><span class="sr-only">Sort by</span><select class="select" id="sort"><option value="name">Name A-Z</option><option value="owner">Owner A-Z</option><option value="age">Oldest first</option></select></label>' +
     '<span class="view-toggle" role="group" aria-label="View"><button type="button" data-view="grid" aria-pressed="true">Cards</button><button type="button" data-view="list" aria-pressed="false">List</button></span>' +
     '<button type="button" class="btn" id="add-pet">' + VZ.icon('plus', 18) + ' Add pet</button></div>' +

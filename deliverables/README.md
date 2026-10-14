@@ -1,9 +1,9 @@
 # Corrected VetZone update
 
-Download `VetZone_Staff_Item_ID_Deceased_Approval_Update_FIXED.zip` using the file's **Download raw file** button on GitHub.
+The complete corrected application is now at the repository root on this branch. Downloading this branch with GitHub's **Code > Download ZIP** gives the updated application directly; extract the download and open the root `index.html`.
 
-This ZIP corrects duplicate visit dialogs after a deceased-status request and validates death dates on submission and admin approval. It includes two regression tests and updated validation notes. All six checks passed, including Chromium browser tests. Existing browser-data migration was also checked.
+The optional standalone `VetZone_Staff_Item_ID_Deceased_Approval_Update_FIXED.zip` in this folder also contains the corrected application. You do not need it when using the root application.
 
-The archive contains the complete `vetzone-prototype` folder. Application files on the repository's main branch are not changed by this delivery branch.
+The root application includes staff/item IDs, deceased-status submission and admin approval/rejection, preserved pet history, suppressed deceased reminders, and the fixes for duplicate visit dialogs and invalid death dates. All six checks, including Chromium browser tests, are included or documented in the root project.
 
-SHA-256: `0637f4488ec0b87998e8b49b4170bc0ab84efe75b932307b4eb2f8d12577ce61`
+This delivery branch does not change main.

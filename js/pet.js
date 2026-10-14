@@ -95,20 +95,19 @@
       '<div><dt>Owner</dt><dd>' + VZ.esc(owner.name) + '</dd></div><div><dt>Owner phone</dt><dd>' + VZ.esc(owner.phone) + '</dd></div>' +
       '<div><dt>Visits recorded</dt><dd>' + VZ.visitCount(pet.id) + '</dd></div><div><dt>Last visit</dt><dd>' + (last ? VZ.fmtDate(last) : 'None yet') + '</dd></div>';
     document.getElementById('pet-status').value = pet.status;
+    document.getElementById('pet-status').disabled = pet.status === 'Deceased';
+    var death = pet.deceased;
+    document.getElementById('pet-deceased-details').innerHTML = death ? '<p class="note"><b>Deceased:</b> ' + VZ.fmtDate(death.date) + ' (' + VZ.esc(death.location) + '). Approved by ' + VZ.esc(VZ.userName(death.approvedBy)) + '.</p>' : '';
+    var requests = VZ.petDeathRequests().filter(function (r) { return r.petId === pet.id; });
+    var pendingDeath = requests.some(function (r) { return r.status === 'pending'; });
+    document.getElementById('pet-death-requests').innerHTML = pendingDeath ? '<p class="note">Deceased status request is pending admin approval. The pet status has not changed.</p>' : '';
+    document.getElementById('request-deceased').hidden = pet.status === 'Deceased' || pendingDeath;
+
     document.getElementById('pet-due-note').innerHTML = dueNote;
     document.getElementById('pet-waiting').innerHTML = waiting;
     document.getElementById('pet-visits').innerHTML = visits.length ? '<div class="visit-list">' + visits.map(function (r) { return visitCard(r, false); }).join('') + '</div>' : '<p class="empty">No approved visits yet. Add a visit record to start this pet\'s medical history.</p>';
     document.getElementById('pet-vaccinations').innerHTML = vaccinationTable(vax, false);
 
-    document.getElementById('pet-status').addEventListener('change', function (e) {
-      var r = VZ.setPetStatus(pet.id, e.target.value);
-      VZ.toast(r.ok ? pet.name + ' is now marked as ' + e.target.value + '.' : (r.error || 'This could not be saved.'), r.ok ? '' : 'error');
-      render();
-    });
-    document.getElementById('add-rec').addEventListener('click', openVaccination);
-    document.getElementById('add-visit').addEventListener('click', function () {
-      VZ.openVisitForm(pet, user, { onSaved: saved });
-    });
     main.querySelectorAll('[data-edit]').forEach(function (b) {
       b.addEventListener('click', function () {
         var rec = VZ.db.records.filter(function (r) { return r.id === b.getAttribute('data-edit'); })[0];
@@ -154,6 +153,32 @@
       render(); VZ.refreshNavBadges();
     });
   }
+
+  // These controls survive rendering; bind them once to avoid duplicate actions.
+  document.getElementById('pet-status').addEventListener('change', function (e) {
+    var r = VZ.setPetStatus(pet.id, e.target.value);
+    VZ.toast(r.ok ? pet.name + ' is now marked as ' + e.target.value + '.' : (r.error || 'This could not be saved.'), r.ok ? '' : 'error');
+    render();
+  });
+  document.getElementById('request-deceased').onclick = function () {
+    var m = VZ.modal('Request deceased status for ' + pet.name,
+      '<form id="death-request-form" novalidate><p class="note">Only an admin can confirm this status. Existing records are preserved.</p>' +
+      VZ.field('Date of death', 'date', '<input class="input" type="date" name="date" min="' + VZ.esc(pet.birth || '') + '" max="' + VZ.today() + '" value="' + VZ.today() + '">') +
+      VZ.field('Location', 'location', '<select class="select" name="location"><option value="">Select location</option><option>At clinic</option><option>Outside clinic</option><option>Unknown</option></select>') +
+      VZ.field('Notes (optional)', 'notes', '<textarea class="textarea" name="notes" maxlength="500"></textarea>', 'Record only confirmed details; do not guess the cause of death.') +
+      '<div class="modal-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button class="btn" type="submit">Send for approval</button></div></form>');
+    var form = m.body.querySelector('form');
+    m.body.querySelector('[data-cancel]').addEventListener('click', m.close);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault(); var result = VZ.requestPetDeath(pet.id, VZ.formData(form));
+      if (!result.ok) { VZ.showErrors(form, result.errors || {}); if (result.error) VZ.showFormError(form, result.error); return; }
+      m.close(); VZ.toast('Request sent to admin for approval.'); render(); VZ.refreshNavBadges();
+    });
+  };
+  document.getElementById('add-rec').addEventListener('click', openVaccination);
+  document.getElementById('add-visit').addEventListener('click', function () {
+    VZ.openVisitForm(pet, user, { onSaved: saved });
+  });
 
   render();
 })();

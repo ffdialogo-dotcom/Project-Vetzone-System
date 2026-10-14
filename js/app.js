@@ -341,10 +341,23 @@
   function migrate(db) {
     db.requests = db.requests || [];
     db.audit = db.audit || [];
+    db.petStatusRequests = db.petStatusRequests || [];
+    // Assign permanent, human-readable IDs to existing and newly created records.
+    function assign(list, prefix) {
+      var max = 0;
+      list.forEach(function (item) { var m = new RegExp('^' + prefix + '-(\\d+)$').exec(item.displayId || ''); if (m) max = Math.max(max, Number(m[1])); });
+      list.forEach(function (item) { if (!item.displayId) item.displayId = prefix + '-' + String(++max).padStart(4, '0'); });
+    }
+    assign(db.users, 'STF'); assign(db.products, 'ITM');
     db.users.forEach(function (u) { if (!u.seen) u.seen = {}; });
     return db;
   }
   VZ.db = migrate(loadDB() || seed());
+  VZ.nextDisplayId = function (list, prefix) {
+    var max = 0;
+    list.forEach(function (x) { var m = new RegExp('^' + prefix + '-(\\d+)$').exec(x.displayId || ''); if (m) max = Math.max(max, Number(m[1])); });
+    return prefix + '-' + String(max + 1).padStart(4, '0');
+  };
   VZ.save();
 
   /* ----------------------------------------------------------- session */
@@ -559,7 +572,7 @@
   }
   function applyNew(c) {
     var today = VZ.today();
-    var p = { id: VZ.uid('p'), name: c.name, category: c.category, price: c.price, reorder: c.reorder, emoji: CAT_EMOJI[c.category], archived: false, created: today };
+    var p = { id: VZ.uid('p'), displayId: VZ.nextDisplayId(VZ.db.products, 'ITM'), name: c.name, category: c.category, price: c.price, reorder: c.reorder, emoji: CAT_EMOJI[c.category], archived: false, created: today };
     VZ.db.products.push(p);
     if (c.qty > 0) VZ.db.batches.push({ id: VZ.uid('b'), productId: p.id, qty: c.qty, expiry: c.expiry || null, received: today });
     return p;
@@ -851,6 +864,7 @@
         dueItems.push({ key: k, type: r.type, title: r.title, due: r.nextDue, days: d });
       }
     });
+    if (pet.status === 'Deceased') return { label: 'Deceased', cls: 'chip-grey', vaxDue: false, checkDue: false, overdue: false, dueItems: [] };
     var label = pet.status === 'In Treatment' ? 'In Treatment' : vaxDue ? 'Vaccination Due' : checkDue ? 'Checkup Due' : 'Healthy';
     var cls = label === 'Healthy' ? 'chip-green' : label === 'In Treatment' ? 'chip-blue' : overdue ? 'chip-red' : 'chip-amber';
     return { label: label, cls: cls, vaxDue: vaxDue, checkDue: checkDue, overdue: overdue, dueItems: dueItems };
@@ -882,10 +896,66 @@
     var me = actor(); if (!me) return needSignIn(); if (!VZ.can('pets.status')) return denied();
     var pet = VZ.findPet(petId);
     if (!pet || ['Healthy', 'In Treatment'].indexOf(status) < 0) return { ok: false };
+    if (pet.status === 'Deceased') return { ok: false, error: 'A deceased pet cannot be reactivated using the normal status control. Contact an admin.' };
     pet.status = status;
     VZ.log('pet', pet.name + ' marked as ' + status, me);
     VZ.save();
     return { ok: true };
+  };
+
+  /* Pet death requests: staff submit, admins decide. Pending requests never change the pet. */
+  VZ.petDeathRequests = function (status) {
+    var me = actor(); if (!me) return [];
+    return VZ.db.petStatusRequests.filter(function (r) { return (me.role === 'admin' || r.byId === me.id) && (!status || r.status === status); });
+  };
+  function deathDateError(pet, date) {
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date.slice(0, 4) === '0000') {
+      return 'Enter a valid date of death.';
+    }
+    var parsed = new Date(date + 'T00:00:00Z');
+    if (isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+      return 'Enter a valid calendar date of death.';
+    }
+    if (date > VZ.today()) return 'The date of death cannot be in the future.';
+    if (pet.birth && date < pet.birth) return 'The date of death cannot be before the pet\'s birth date.';
+    return '';
+  }
+  VZ.requestPetDeath = function (petId, details) {
+    var me = actor(); if (!me) return needSignIn(); if (!VZ.can('pets.status')) return denied();
+    var pet = VZ.findPet(petId), errors = {};
+    if (!pet || pet.status === 'Deceased') return { ok: false, error: 'This pet cannot be submitted for a death status change.' };
+    var date = String(details.date || ''), location = String(details.location || ''), notes = String(details.notes || '').trim();
+    var dateError = deathDateError(pet, date);
+    if (dateError) errors.date = dateError;
+    if (['At clinic', 'Outside clinic', 'Unknown'].indexOf(location) < 0) errors.location = 'Choose where the death occurred.';
+    if (notes.length > 500) errors.notes = 'Keep notes within 500 characters.';
+    if (Object.keys(errors).length) return { ok: false, errors: errors };
+    if (VZ.db.petStatusRequests.some(function (r) { return r.petId === petId && r.status === 'pending'; })) return { ok: false, error: 'A death status request for this pet is already pending.' };
+    var r = { id: VZ.uid('pd'), petId: petId, date: date, location: location, notes: notes, status: 'pending', by: me.username, byId: me.id, at: VZ.nowStr(), reviewedBy: '', reviewedAt: '', note: '' };
+    VZ.db.petStatusRequests.push(r);
+    VZ.log('pet', 'Requested deceased status for ' + pet.name + ' (pending admin approval)', me);
+    VZ.audit('pet.deceased.submit', pet.name, 'Death status request submitted', me);
+    VZ.save(); return { ok: true, request: r };
+  };
+  VZ.reviewPetDeath = function (id, decision, note) {
+    var me = actor(); if (!me) return needSignIn(); if (me.role !== 'admin') return denied();
+    var r = VZ.db.petStatusRequests.filter(function (x) { return x.id === id; })[0];
+    if (!r || r.status !== 'pending') return { ok: false, error: 'Request is no longer pending.' };
+    if (decision !== 'approve' && decision !== 'reject') return { ok: false, error: 'Invalid decision.' };
+    note = String(note || '').trim();
+    if (decision === 'reject' && !note) return { ok: false, errors: { note: 'Explain why the request was rejected.' } };
+    if (note.length > 200) return { ok: false, errors: { note: 'Note is too long.' } };
+    var pet = VZ.findPet(r.petId);
+    if (!pet || (decision === 'approve' && pet.status === 'Deceased')) return { ok: false, error: 'Pet is missing or already deceased.' };
+    if (decision === 'approve') {
+      var dateError = deathDateError(pet, r.date);
+      if (dateError) return { ok: false, error: 'Cannot approve this request: ' + dateError };
+    }
+    r.status = decision === 'approve' ? 'approved' : 'rejected'; r.reviewedBy = me.username; r.reviewedAt = VZ.nowStr(); r.note = note;
+    if (decision === 'approve') { pet.status = 'Deceased'; pet.deceased = { date: r.date, location: r.location, notes: r.notes, approvedBy: me.username, approvedAt: r.reviewedAt }; }
+    VZ.log('pet', 'Death status request ' + r.status + ' for ' + pet.name, me);
+    VZ.audit('pet.deceased.' + r.status, pet.name, 'Request ' + r.id, me);
+    VZ.save(); return { ok: true };
   };
 
   /* ------------------------------------------- medical history entries */
@@ -1033,7 +1103,7 @@
   };
   VZ.pendingApprovalCount = function () {
     if (!VZ.can('inventory.review')) return 0;
-    return VZ.db.requests.filter(function (r) { return r.status === 'pending'; }).length + VZ.db.records.filter(function (r) { return r.status === 'pending'; }).length;
+    return VZ.db.requests.filter(function (r) { return r.status === 'pending'; }).length + VZ.db.records.filter(function (r) { return r.status === 'pending'; }).length + VZ.db.petStatusRequests.filter(function (r) { return r.status === 'pending'; }).length;
   };
 
   /* ------------------------------------------------------------ users */
@@ -1063,7 +1133,7 @@
     var extra = checkProfileFields(d, err);
     if (Object.keys(err).length) return { ok: false, errors: err };
     var u = {
-      id: VZ.uid('u'), username: uname, name: name, role: role, passHash: VZ.hash(uname, d.password), active: !pending, pending: !!pending, created: VZ.today(),
+      id: VZ.uid('u'), displayId: VZ.nextDisplayId(VZ.db.users, 'STF'), username: uname, name: name, role: role, passHash: VZ.hash(uname, d.password), active: !pending, pending: !!pending, created: VZ.today(),
       email: extra.email, phone: extra.phone, gender: extra.gender, dob: extra.dob, address: extra.address, idNumber: extra.idNumber, startDate: VZ.today(), photo: '', seen: {}
     };
     VZ.db.users.push(u);

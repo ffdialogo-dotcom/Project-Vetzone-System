@@ -110,7 +110,7 @@
         var p = x.p, i = x.i;
         var exp = i.nextExpiry ? VZ.fmtDate(i.nextExpiry) : (i.expired ? 'Expired' : 'No expiry');
         var pend = pendingBy[p.id] ? ' <span class="chip chip-grey" title="A change to this item is waiting for admin approval">Change pending</span>' : '';
-        return '<tr><td><span class="item-cell"><span class="thumb" aria-hidden="true">' + p.emoji + '</span><span>' + VZ.esc(p.name) + pend + '</span></span></td>' +
+        return '<tr><td><span class="item-cell"><span class="thumb" aria-hidden="true">' + p.emoji + '</span><span>' + VZ.esc(p.name) + '<br><small>' + VZ.esc(p.displayId || p.id) + '</small>' + pend + '</span></span></td>' +
           '<td>' + VZ.esc(p.category) + '</td><td class="num nowrap">' + VZ.money(p.price) + '</td><td class="num">' + i.sellable + '</td><td class="nowrap">' + exp + '</td>' +
           '<td>' + (state.view === 'archived' ? '<span class="chip chip-grey">Archived</span>' : VZ.chipsHTML(VZ.chips(i))) + '</td>' +
           '<td><span class="row-actions">' + (state.view === 'archived' ?

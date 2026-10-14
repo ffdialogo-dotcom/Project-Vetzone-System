@@ -32,8 +32,15 @@
     return { kind: 'Medical history', id: r.id, source: 'medical', at: r.ts || r.date + 'T00:00:00', by: r.by, summary: (pet ? pet.name : 'Unknown pet') + ': ' + r.title + ' (' + KIND[r.type] + ')',
       detail: 'Entry date: ' + VZ.fmtDate(r.date), status: r.status, reviewedBy: r.reviewedBy, reviewedAt: r.reviewedAt, note: r.reviewNote, href: 'pet.html?id=' + encodeURIComponent(r.petId) };
   }
+  function fromDeath(r) {
+    var pet = VZ.findPet(r.petId);
+    return { kind: 'Deceased status', id: r.id, source: 'death', at: r.at, by: r.by,
+      summary: (pet ? pet.name : 'Unknown pet') + ': deceased status request', detail: 'Date: ' + VZ.fmtDate(r.date) + '; location: ' + r.location,
+      status: r.status, reviewedBy: r.reviewedBy, reviewedAt: r.reviewedAt, note: r.note, href: 'pet.html?id=' + encodeURIComponent(r.petId) };
+  }
   function allSubmissions() {
     var list = VZ.inventoryRequests().map(fromRequest);
+    VZ.petDeathRequests().forEach(function (r) { list.push(fromDeath(r)); });
     var seen = {};
     VZ.recordsByStatus('pending').concat(VZ.reviewedRecords()).forEach(function (r) { if (!seen[r.id]) { seen[r.id] = 1; list.push(fromRecord(r)); } });
     return list.sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
@@ -107,10 +114,10 @@
   }
 
   function renderAdmin() {
-    var inv = VZ.inventoryRequests('pending'), med = VZ.recordsByStatus('pending'), accounts = VZ.pendingCount();
-    var reviewed = VZ.inventoryRequests().filter(function (r) { return r.status !== 'pending'; }).map(fromRequest).concat(VZ.reviewedRecords().map(fromRecord))
+    var inv = VZ.inventoryRequests('pending'), med = VZ.recordsByStatus('pending'), deaths = VZ.petDeathRequests('pending'), accounts = VZ.pendingCount();
+    var reviewed = VZ.inventoryRequests().filter(function (r) { return r.status !== 'pending'; }).map(fromRequest).concat(VZ.reviewedRecords().map(fromRecord)).concat(VZ.petDeathRequests().filter(function (r) { return r.status !== 'pending'; }).map(fromDeath))
       .sort(function (a, b) { return a.reviewedAt < b.reviewedAt ? 1 : -1; }).slice(0, 40);
-    var tabs = [['inventory', 'Inventory changes (' + inv.length + ')'], ['medical', 'Medical history (' + med.length + ')'], ['reviewed', 'Reviewed'], ['audit', 'Audit trail']].map(function (t) {
+    var tabs = [['inventory', 'Inventory changes (' + inv.length + ')'], ['medical', 'Medical history (' + med.length + ')'], ['death', 'Deceased requests (' + deaths.length + ')'], ['reviewed', 'Reviewed'], ['audit', 'Audit trail']].map(function (t) {
       return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="' + (tab === t[0]) + '">' + t[1] + '</button>';
     }).join('');
     var body;
@@ -127,6 +134,9 @@
           return '<tr><td class="nowrap">' + when(r.ts) + '</td><td>' + VZ.esc(VZ.userName(r.by)) + '</td><td><b>' + VZ.esc(pet.name) + '</b> (owner: ' + VZ.esc(VZ.findOwner(pet.ownerId).name) + ')<br><small>' + VZ.esc(r.title) + ', ' + VZ.fmtDate(r.date) + '</small></td><td>' + KIND[r.type] + '</td>' +
             '<td><button type="button" class="btn btn-sm" data-review-rec="' + r.id + '">Review</button></td></tr>';
         }).join('') + '</tbody></table></div>' : '<p class="empty">No medical history entries are waiting.</p>';
+    } else if (tab === 'death') {
+      body = deaths.length ? '<div class="table-wrap"><table class="table"><thead><tr><th>Submitted</th><th>Staff</th><th>Pet</th><th>Date of death</th><th>Location</th><th>Action</th></tr></thead><tbody>' +
+        deaths.map(function (r) { var pet = VZ.findPet(r.petId); return '<tr><td>' + when(r.at) + '</td><td>' + VZ.esc(VZ.userName(r.by)) + '</td><td>' + VZ.esc(pet ? pet.name : 'Unknown pet') + '</td><td>' + VZ.fmtDate(r.date) + '</td><td>' + VZ.esc(r.location) + '</td><td><button type="button" class="btn btn-sm" data-review-death="' + r.id + '">Review</button></td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="empty">No deceased status requests are pending.</p>';
     } else if (tab === 'reviewed') {
       body = reviewed.length ? '<div class="table-wrap"><table class="table" style="min-width:720px"><caption class="sr-only">Reviewed submissions</caption><thead><tr><th scope="col">Reviewed</th><th scope="col">Type</th><th scope="col">What</th><th scope="col">Status</th><th scope="col">Submitted by</th><th scope="col">Reviewed by</th></tr></thead><tbody>' +
         reviewed.map(function (x) {
@@ -146,6 +156,18 @@
     main.querySelectorAll('[data-tab]').forEach(function (b) { b.addEventListener('click', function () { tab = b.getAttribute('data-tab'); renderAdmin(); }); });
     main.querySelectorAll('[data-review-inv]').forEach(function (b) {
       b.addEventListener('click', function () { var rq = VZ.db.requests.filter(function (r) { return r.id === b.getAttribute('data-review-inv'); })[0]; if (rq) reviewInventory(rq); });
+    });
+    main.querySelectorAll('[data-review-death]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var r = VZ.petDeathRequests('pending').filter(function (x) { return x.id === b.getAttribute('data-review-death'); })[0];
+        if (!r) return;
+        var pet = VZ.findPet(r.petId);
+        openReview('Review deceased status request', dl([
+          ['Pet', VZ.esc(pet ? pet.name : 'Unknown pet')], ['Submitted by', VZ.esc(VZ.userName(r.by))],
+          ['Date of death', VZ.fmtDate(r.date)], ['Location', VZ.esc(r.location)], ['Notes', VZ.esc(r.notes || 'None')],
+          ['Current status', VZ.esc(pet ? pet.status : 'Unknown')]
+        ]), function (decision, note) { return VZ.reviewPetDeath(r.id, decision, note); });
+      });
     });
     main.querySelectorAll('[data-review-rec]').forEach(function (b) {
       b.addEventListener('click', function () { var rec = VZ.db.records.filter(function (r) { return r.id === b.getAttribute('data-review-rec'); })[0]; if (rec) reviewRecord(rec); });

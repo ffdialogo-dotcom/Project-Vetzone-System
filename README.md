@@ -2,6 +2,15 @@
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
 
+## Updated deceased-status workflow
+This branch contains the complete updated application at the top level. After downloading and extracting the GitHub branch ZIP, open this folder's `index.html`; no inner ZIP needs to be extracted.
+
+- Log in as staff, open **Pet records**, choose a pet, and click **Request deceased status**. Enter a valid date of death and location, then submit.
+- The pet keeps its current status while the request waits for approval.
+- Log in as admin, open **Approvals**, and choose **Deceased requests** to approve or reject it. Rejection requires a note.
+- Approval marks the pet **Deceased**, keeps its history, and suppresses its routine reminders. The pet list has a **Deceased** filter.
+- Staff and inventory display IDs are included. Duplicate visit dialogs and invalid death dates are fixed; see `FIX_NOTES.md` and `VALIDATION_RESULTS.txt`.
+
 ## How to open
 1. Unzip the folder.
 2. Double-click `index.html` (Chrome or Edge work best).

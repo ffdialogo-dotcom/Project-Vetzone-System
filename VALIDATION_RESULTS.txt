@@ -1,16 +1,41 @@
-app.js: PASS 
-approvals.js: PASS 
-create-account.js: PASS 
-dashboard.js: PASS 
-income.js: PASS 
-inventory.js: PASS 
-login.js: PASS 
-pet.js: PASS 
-pets.js: PASS 
-profile.js: PASS 
-sales.js: PASS 
-staff.js: PASS 
-top-sellers.js: PASS 
-check-archive.js: PASS PASS: archive, restore, staff restriction, duplicate restore, batches and audit log.
-check-project.js: PASS PASS: 13 JavaScript files parsed; 55 local HTML links checked; basic prototype data and helpers verified.
-Browser end-to-end tests: NOT RUN
+Validation of the corrected uploaded project (October 14, 2026)
+
+PASS: tests/check-project.js
+  13 application JavaScript files parsed; 59 local HTML links checked.
+  Seed data, helpers, sale recording, stock deduction and overselling rejection.
+PASS: tests/check-archive.js
+  Archive, restore, staff restriction, duplicate restore, batches and audit log.
+PASS: tests/check-static-pages.js
+  Three converted static interfaces and their main-page behavior.
+PASS: tests/check-feature-ids-deceased.js
+  Staff/item IDs, deceased submission, permissions, approval/rejection,
+  duplicate guards, audit and reminder suppression.
+PASS: tests/check-death-date-validation.js (new regression test)
+  10 invalid submission cases; valid birth-date/today/leap-day boundaries;
+  10 persisted invalid requests blocked at approval without state mutations;
+  invalid legacy requests remain rejectable with an explanatory note.
+PASS: tests/check-pet-browser.js (new Chromium regression/smoke test)
+  Invalid login and staff/admin login; role-specific dashboards;
+  staff/item ID rendering; pending deceased requests; staff review restriction;
+  duplicate pending-request guard; admin approval/rejection; rejection notes;
+  reload persistence; preserved medical history; suppressed deceased reminders;
+  deceased grid/list filtering; staff visibility of rejection notes;
+  all application pages, account-page rendering and logout.
+  One Add visit click opens one dialog after a deceased request and repeated renders.
+  One visit submission produces exactly one record.
+  Each treatment-status change adds exactly one activity entry.
+  Pre-birth death dates rejected through the actual HTML form.
+  No uncaught browser errors during this check.
+
+PASS: additional existing-data migration check against /workspace/test baseline.
+  Existing records and internal IDs preserved; staff/item display IDs remain
+  stable on reload; newly created staff and items receive unique display IDs.
+
+Regression sensitivity confirmed: the new death-date test fails on the
+unmodified supplied ZIP because 2026-02-30 is accepted there.
+
+The browser check used a fresh isolated profile and blocked optional Google
+font requests to exercise the documented offline font fallback.
+Full manual checklist, every responsive viewport, and production/backend
+security testing are outside this validation. This remains a browser-storage
+prototype, as described in README.md.
