@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard | VetZone VetCare System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app"><main class="vz-page-template" id="vz-static-page">
+<div class="stat-grid" id="dashboard-stats"></div>
+<div class="grid-2"><section class="card welcome"><h2 id="dashboard-greeting"></h2><p class="name" id="dashboard-name"></p><p>Here is what is happening at VetZone today.</p><div class="mini-grid" id="dashboard-minis"></div><h3 class="sub-h">Needs attention</h3><div id="dashboard-attention"></div></section>
+<section class="card"><div class="card-head"><h2>Recent activity</h2></div><ul class="activity-list" id="dashboard-activity"></ul></section></div>
+<div class="grid-2 even" id="dashboard-charts"><section class="card" id="dashboard-sales-card" hidden><div class="card-head"><h2>Sales overview</h2><div class="range" role="group" aria-label="Date range"><button type="button" data-days="7" aria-pressed="false">7D</button><button type="button" data-days="14" aria-pressed="true">14D</button><button type="button" data-days="30" aria-pressed="false">30D</button></div></div><div id="sales-chart"></div><div class="sales-summary"><div class="sum-tile sum-pink"><small>Total sales</small><b id="sum-total"></b></div><div class="sum-tile sum-green"><small>Number of sales</small><b id="sum-count"></b></div></div></section>
+<section class="card" id="dashboard-inventory-card"><div class="card-head"><h2>Inventory status</h2></div><div class="donut-wrap"><div id="donut"></div><ul class="legend" id="dashboard-legend"></ul></div><p class="caption">Each item is counted once, under its most urgent status. An item can also appear in both the low-stock and expiring cards above.</p></section></div></main></div>
+<noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
+<script src="js/app.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

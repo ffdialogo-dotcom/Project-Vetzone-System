@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff accounts | VetZone VetCare System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app"><main class="vz-page-template" id="vz-static-page">
+<div class="toolbar"><span id="staff-summary" style="flex:1 1 320px"></span><a class="btn" id="add-user" href="create-account.html"><span data-icon="plus" class="vz-icon-placeholder"></span> Create account</a></div>
+<div class="table-wrap"><table class="table"><caption class="sr-only">Accounts</caption><thead><tr><th scope="col">Name</th><th scope="col">Username</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead><tbody id="staff-rows"></tbody></table></div>
+<section class="card"><div class="card-head"><h2>Demo data</h2></div><p>This prototype keeps its data in this browser only. Reset it to go back to the original sample data before a demo.</p><div class="modal-actions" style="justify-content:flex-start"><button type="button" class="btn btn-danger" id="reset-demo">Reset demo data</button></div></section>
+</main></div>
+<noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
+<script src="js/app.js"></script>
+<script src="js/staff.js"></script>
+</body>
+</html>

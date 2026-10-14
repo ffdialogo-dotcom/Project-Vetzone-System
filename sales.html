@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link href="img/favicon.png" rel="icon" type="image/png"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Record sales | VetZone VetCare System</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="css/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div data-static-page="sales" id="app"><main class="vz-page-template" id="vz-static-page"><div class="pos"><section aria-label="Items for sale"><div class="toolbar"><label class="search"><span class="vz-icon-placeholder" data-icon="search" data-size="18"></span><span class="sr-only">Search items</span><input id="q" placeholder="Search items" type="search"/></label></div><div aria-label="Category" class="chip-row" id="cats" role="group"></div><div class="product-grid" id="grid"></div></section><aside aria-label="Current order" class="card order"><h2>Current order <span class="chip chip-grey" id="count">0 items</span></h2><div id="cart-wrap"></div><form id="pay-form" novalidate=""><fieldset><legend>Payment method</legend><label class="radio"><input name="method" type="radio" value="Cash"/> Cash</label><label class="radio"><input name="method" type="radio" value="Online payment"/> Online payment</label><small class="hint caption">Online payment only marks how the customer paid. The system does not process payments.</small></fieldset><div class="totals"><div><span>Subtotal</span><b id="sub"></b></div><div><label for="disc">Discount (%)</label><input class="input" id="disc" inputmode="decimal" max="100" min="0" placeholder="0" step="0.01" type="number"/></div><div><span>Discount amount</span><span id="disc-amt"></span></div><div class="grand"><span>Total</span><span id="total"></span></div></div><div class="form-error" hidden="" id="pay-error" role="alert" style="margin-top:10px"></div><button class="btn btn-block" id="pay-btn" style="margin-top:12px" type="submit">Record payment</button></form></aside></div></main></div>
+<noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
+<script src="js/app.js"></script>
+<script src="js/sales.js"></script>
+</body>
+</html>

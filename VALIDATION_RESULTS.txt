@@ -1,0 +1,16 @@
+app.js: PASS 
+approvals.js: PASS 
+create-account.js: PASS 
+dashboard.js: PASS 
+income.js: PASS 
+inventory.js: PASS 
+login.js: PASS 
+pet.js: PASS 
+pets.js: PASS 
+profile.js: PASS 
+sales.js: PASS 
+staff.js: PASS 
+top-sellers.js: PASS 
+check-archive.js: PASS PASS: archive, restore, staff restriction, duplicate restore, batches and audit log.
+check-project.js: PASS PASS: 13 JavaScript files parsed; 55 local HTML links checked; basic prototype data and helpers verified.
+Browser end-to-end tests: NOT RUN

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link href="img/favicon.png" rel="icon" type="image/png"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Create account | VetZone VetCare System</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="css/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<main class="login-page" id="page">
+<section aria-hidden="true" class="login-art green"><svg class="bg" fill="none" opacity="0.9" preserveaspectratio="xMidYMid slice" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" viewbox="0 0 600 700"><g transform="translate(40 60) rotate(-12)"><rect height="80" rx="18" width="110" x="0" y="12"></rect><path d="M55 34v36M37 52h36"></path><path d="M30 12c0-14 10-22 25-22s25 8 25 22"></path></g><g transform="translate(400 40) rotate(10)"><rect height="90" rx="10" width="34" x="0" y="0"></rect><path d="M0 28h34M0 60h34"></path></g><g transform="translate(60 520) rotate(-8)"><path d="M10 0h60l-6 40c-2 16-10 30-24 30S12 56 10 40z"></path><path d="M20 20h40"></path></g><g transform="translate(330 560) rotate(18)"><circle cx="30" cy="30" r="30"></circle><path d="M12 30h36M30 12v36"></path></g><g transform="translate(470 330) rotate(24)"><path d="M0 40c0-26 40-26 40 0M0 40c0 26-40 26-40 0M50 30l60-22M50 50l60 22"></path></g></svg>
+<div class="art-card"><div class="paw-big" id="create-art-icon"></div><h2 id="create-art-title"></h2><p id="create-art-text"></p></div></section>
+<section class="create-side" id="create-side"><a class="back" hidden="" href="staff.html" id="admin-back"><span id="back-icon"></span> Back to staff accounts</a>
+<div class="create-top" hidden="" id="guest-top"><p class="caption">Already have an account?</p><a class="btn btn-ghost btn-sm" href="index.html">Log in</a></div>
+<div class="create-head"><h1>Create account</h1><span id="create-logo"></span></div>
+<p class="caption" id="create-description" style="margin:0"></p>
+<form id="create-form" novalidate=""><div class="form-grid">
+<label class="field"><span>Full name</span><input autocomplete="name" class="input" maxlength="60" name="name"/><small class="err" data-err="name"></small></label>
+<label class="field"><span>Gender</span><select class="select" name="gender"><option value="">Prefer not to say</option><option>Male</option><option>Female</option></select><small class="err" data-err="gender"></small></label>
+<label class="field"><span>Username</span><input autocapitalize="none" autocomplete="off" class="input" maxlength="20" name="username" spellcheck="false"/><small class="hint">3 to 20 letters, numbers, dots, or underscores.</small><small class="err" data-err="username"></small></label>
+<label class="field"><span>Contact number</span><input autocomplete="off" class="input" inputmode="tel" name="phone" placeholder="0917 000 0000" type="tel"/><small class="err" data-err="phone"></small></label>
+<label class="field"><span>Password</span><span class="pw-wrap2"><input autocomplete="new-password" class="input" name="password" type="password"/><button aria-label="Show password" aria-pressed="false" class="icon-btn" id="toggle-pw" type="button"><span id="password-eye"></span></button></span><small class="hint" id="password-hint"></small><small class="err" data-err="password"></small></label>
+<label class="field" hidden="" id="admin-role"><span>Role account</span><select class="select" name="role"><option value="staff">Staff</option><option value="admin">Admin</option></select><small class="hint">Staff cannot see income or manage accounts.</small><small class="err" data-err="role"></small></label>
+<label class="field" hidden="" id="guest-role"><span>Role account</span><input aria-readonly="true" class="input" readonly="" value="Staff"/><small class="hint">The admin sets the role. New accounts start as staff, after the admin approves them.</small></label>
+<label class="field"><span>Email address</span><input autocomplete="off" class="input" maxlength="80" name="email" type="email"/><small class="err" data-err="email"></small></label>
+<label class="field"><span>ID number</span><input autocomplete="off" class="input" maxlength="30" name="idNumber"/><small class="hint">Optional, such as a staff ID.</small><small class="err" data-err="idNumber"></small></label>
+<label class="field"><span>Date of birth</span><input class="input" name="dob" type="date"/><small class="err" data-err="dob"></small></label><span></span>
+<div style="grid-column:1/-1"><label class="field"><span>Address</span><input autocomplete="off" class="input" maxlength="120" name="address"/><small class="err" data-err="address"></small></label></div>
+</div><div class="create-actions"><a class="btn btn-ghost" href="index.html" id="login-link">Log in</a><button class="btn" type="submit">Confirm</button></div></form></section>
+</main>
+<noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
+<script src="js/app.js"></script>
+<script src="js/create-account.js"></script>
+</body>
+</html>

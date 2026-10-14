@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Top sellers | VetZone VetCare System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app"><main class="vz-page-template" id="vz-static-page">
+<a class="back" href="dashboard.html"><span data-icon="back" class="vz-icon-placeholder"></span> Back to dashboard</a>
+<section class="card"><div class="top-controls"><h2 id="top-heading">Top 10 products, last 30 days</h2>
+<div class="group"><span>Period</span><div class="range" role="group" aria-label="Period"><button type="button" data-days="7" aria-pressed="false">7D</button><button type="button" data-days="14" aria-pressed="false">14D</button><button type="button" data-days="30" aria-pressed="true">30D</button></div>
+<span>Rank by</span><div class="range" role="group" aria-label="Rank by"><button type="button" data-by="qty" aria-pressed="true">Quantity sold</button><button type="button" data-by="total" aria-pressed="false">Total sales</button></div></div></div>
+<div class="table-wrap" id="top-table" style="margin-top:14px"><table class="table" style="min-width:480px"><caption class="sr-only">Top-selling products</caption><thead><tr><th scope="col">Rank</th><th scope="col">Product</th><th scope="col" class="num">Quantity sold</th><th scope="col" class="num">Total sales</th></tr></thead><tbody id="top-rows"></tbody></table></div>
+<p class="caption" id="top-caption">Ranked by quantity sold, then total sales. Total sales are after discounts.</p><p class="empty" id="top-empty" hidden>No sales were recorded in this period.</p></section></main></div>
+<noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
+<script src="js/app.js"></script>
+<script src="js/top-sellers.js"></script>
+</body>
+</html>

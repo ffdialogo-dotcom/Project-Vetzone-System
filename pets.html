@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link href="img/favicon.png" rel="icon" type="image/png"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Pet records | VetZone VetCare System</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="css/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div data-static-page="pets" id="app"><main class="vz-page-template" id="vz-static-page"><div class="toolbar"><label class="search"><span class="vz-icon-placeholder" data-icon="search" data-size="18"></span><span class="sr-only">Search pets or owners</span><input id="q" placeholder="Search by pet or owner name" type="search"/></label><label><span class="sr-only">Species</span><select class="select" id="species"><option value="All">All pets</option><option>Dog</option><option>Cat</option></select></label><label><span class="sr-only">Status</span><select class="select" id="status"><option value="All">All statuses</option><option>Healthy</option><option>Vaccination Due</option><option>Checkup Due</option><option>In Treatment</option></select></label><label><span class="sr-only">Sort by</span><select class="select" id="sort"><option value="name">Name A-Z</option><option value="owner">Owner A-Z</option><option value="age">Oldest first</option></select></label><span aria-label="View" class="view-toggle" role="group"><button aria-pressed="true" data-view="grid" type="button">Cards</button><button aria-pressed="false" data-view="list" type="button">List</button></span><button class="btn" id="add-pet" type="button"><span class="vz-icon-placeholder" data-icon="plus" data-size="18"></span> Add pet</button></div><div class="stat-grid" id="pet-stats"></div><div id="pets"></div></main></div>
+<noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
+<script src="js/app.js"></script>
+<script src="js/pets.js"></script>
+</body>
+</html>

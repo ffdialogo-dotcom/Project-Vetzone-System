@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pet profile | VetZone VetCare System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app"></div>
+<template id="vz-static-page">
+<a class="back" href="pets.html"><span data-icon="back"></span> Back to pet records</a>
+<div class="profile"><section class="card profile-card">
+<div id="pet-avatar" class="big" aria-hidden="true"></div><h2 id="pet-name"></h2><p id="pet-state"></p>
+<dl class="facts" id="pet-facts"></dl>
+<label class="field" style="margin-top:14px;text-align:left"><span>Treatment status</span><select class="select" id="pet-status"><option>Healthy</option><option>In Treatment</option></select><small class="hint">Vaccination and checkup reminders are worked out from the approved records.</small></label>
+<div id="pet-due-note"></div></section>
+<div style="display:grid;gap:18px;min-width:0"><div id="pet-waiting"></div>
+<section class="card"><div class="card-head"><h2>Visit history</h2><button type="button" class="btn btn-sm" id="add-visit"><span data-icon="plus" data-size="16"></span> Add visit record</button></div><div id="pet-visits"></div></section>
+<section class="card"><div class="card-head"><h2>Vaccination history</h2><button type="button" class="btn btn-sm btn-ghost" id="add-rec"><span data-icon="plus" data-size="16"></span> Add vaccination</button></div><div id="pet-vaccinations"></div></section></div></div>
+</template>
+<noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
+<script src="js/app.js"></script>
+<script src="js/pet.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link href="img/favicon.png" rel="icon" type="image/png"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Profile | VetZone VetCare System</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="css/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="app"></div>
+<template id="vz-static-page">
+<div class="me-grid"><section aria-label="Profile summary" class="card me-card">
+<div class="me-avatar" id="me-avatar"></div><h2 id="me-name"></h2><p id="me-role"></p>
+<div class="photo-actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" id="pick-photo" type="button"><span data-icon="camera" data-size="16"></span> Change picture</button><button class="btn btn-ghost btn-sm" hidden="" id="remove-photo" type="button">Remove</button><input accept="image/png,image/jpeg,image/webp" hidden="" id="photo-input" type="file"/></div>
+<dl class="facts"><div><dt>Email</dt><dd id="me-email"></dd></div><div><dt>Contact</dt><dd id="me-phone"></dd></div><div><dt>Account role</dt><dd id="me-role-text"></dd></div></dl></section>
+<div class="me-forms"><section class="card"><div class="card-head"><h2>Personal information</h2></div>
+<form id="profile-form" novalidate=""><div class="form-grid">
+<label class="field"><span>Full name</span><input autocomplete="name" class="input" maxlength="60" name="name"/><small class="err" data-err="name"></small></label>
+<label class="field"><span>Username</span><input class="input" name="username" readonly=""/><small class="hint">The admin sets your username.</small><small class="err" data-err="username"></small></label>
+<label class="field"><span>Email address</span><input autocomplete="email" class="input" maxlength="80" name="email" type="email"/><small class="err" data-err="email"></small></label>
+<label class="field"><span>Contact number</span><input autocomplete="tel" class="input" inputmode="tel" name="phone" type="tel"/><small class="err" data-err="phone"></small></label>
+<label class="field"><span>Date of birth</span><input class="input" name="dob" type="date"/><small class="err" data-err="dob"></small></label>
+<label class="field"><span>Gender</span><select class="select" name="gender"><option value="">Prefer not to say</option><option>Male</option><option>Female</option></select><small class="err" data-err="gender"></small></label>
+<div style="grid-column:1/-1"><label class="field"><span>Address</span><input autocomplete="street-address" class="input" maxlength="120" name="address"/><small class="err" data-err="address"></small></label></div>
+<label class="field"><span>Start date</span><input class="input" name="startDate" readonly=""/><small class="err" data-err="startDate"></small></label>
+</div><div class="modal-actions"><button class="btn" type="submit">Save changes</button></div></form></section>
+<section class="card"><div class="card-head"><h2>Change password</h2></div><form id="pw-form" novalidate=""><div class="pw-grid">
+<label class="field"><span>Current password</span><span class="pw-wrap2"><input autocomplete="current-password" class="input" name="current" type="password"/><button aria-label="Show password" aria-pressed="false" class="icon-btn" data-toggle-pw="" type="button"><span data-icon="eye" data-size="20"></span></button></span><small class="err" data-err="current"></small></label>
+<label class="field"><span>New password</span><span class="pw-wrap2"><input autocomplete="new-password" class="input" name="next" type="password"/><button aria-label="Show password" aria-pressed="false" class="icon-btn" data-toggle-pw="" type="button"><span data-icon="eye" data-size="20"></span></button></span><small class="err" data-err="next"></small></label>
+<label class="field"><span>Confirm new password</span><span class="pw-wrap2"><input autocomplete="new-password" class="input" name="confirm" type="password"/><button aria-label="Show password" aria-pressed="false" class="icon-btn" data-toggle-pw="" type="button"><span data-icon="eye" data-size="20"></span></button></span><small class="err" data-err="confirm"></small></label>
+</div><p class="caption" style="margin:0 0 8px">Use at least 8 characters.</p><div class="modal-actions"><button class="btn" type="submit">Update password</button></div></form></section></div></div>
+</template>
+<noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
+<script src="js/app.js"></script>
+<script src="js/profile.js"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in | VetZone VetCare System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<main class="login-page">
+  <section class="login-art" aria-hidden="true">
+    <svg class="bg" viewBox="0 0 600 700" preserveAspectRatio="xMidYMid slice" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+      <g transform="translate(40 60) rotate(-12)"><rect x="0" y="12" width="110" height="80" rx="18"/><path d="M55 34v36M37 52h36"/><path d="M30 12c0-14 10-22 25-22s25 8 25 22"/></g>
+      <g transform="translate(400 40) rotate(10)"><rect x="0" y="0" width="34" height="90" rx="10"/><path d="M0 28h34M0 60h34"/></g>
+      <g transform="translate(470 330) rotate(24)"><path d="M0 40c0-26 40-26 40 0M0 40c0 26 40 26 40 0M50 30l60-22M50 50l60 22"/></g>
+      <g transform="translate(60 520) rotate(-8)"><path d="M10 0h60l-6 40c-2 16-10 30-24 30S12 56 10 40z"/><path d="M20 20h40"/></g>
+      <g transform="translate(330 560) rotate(18)"><circle cx="30" cy="30" r="30"/><path d="M12 30h36M30 12v36"/></g>
+      <g transform="translate(100 330)"><circle cx="10" cy="26" r="8"/><circle cx="30" cy="10" r="8"/><circle cx="56" cy="10" r="8"/><circle cx="76" cy="26" r="8"/><path d="M43 34c-14 0-28 14-28 26 0 8 6 12 14 12 6 0 8-3 14-3s8 3 14 3c8 0 14-4 14-12 0-12-14-26-28-26z"/></g>
+    </svg>
+    <div class="art-card">
+      <img class="art-logo" src="img/vetzone-logo.png" alt="VetZone logo">
+      <h2>Stock, sales, and pet records in one place</h2>
+      <p>Know what is running low, what is about to expire, and which pets are due for their shots.</p>
+    </div>
+  </section>
+  <section class="login-form-side">
+    <a class="logo" href="index.html" aria-label="VetZone"><img class="logo-img" src="img/vetzone-logo.png" alt="VetZone logo"><span class="logo-text"><span class="vet">VET</span><span class="zone">ZONE</span></span></a>
+    <h1>Sign in</h1>
+    <form id="login-form" novalidate>
+      <div id="login-error" class="form-error" role="alert" hidden></div>
+      <label class="field"><span>Username</span>
+        <input class="input" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Enter your username" required>
+      </label>
+      <label class="field"><span>Password</span>
+        <span class="pw-wrap">
+          <input class="input" id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+          <button type="button" class="icon-btn" id="toggle-pw" aria-label="Show password" aria-pressed="false"></button>
+        </span>
+      </label>
+      <button class="btn btn-block" type="submit">Log in</button>
+      <a class="btn btn-ghost btn-block" id="create-link" href="create-account.html" style="margin-top:10px">Create account</a>
+      <p class="caption">Forgot your password? Ask the clinic admin to reset it. New accounts must be approved by the admin before they can sign in.</p>
+    </form>
+    <div class="demo-box">
+      <b>Prototype demo accounts</b><br>
+      Admin: <b>admin</b> / admin123<br>
+      Staff: <b>staff1</b> / staff123<br>
+      <button type="button" class="btn btn-ghost btn-sm" id="fill-admin">Fill in admin</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="fill-staff">Fill in staff</button>
+    </div>
+  </section>
+</main>
+<noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
+<script src="js/app.js"></script>
+<script src="js/login.js"></script>
+</body>
+</html>
