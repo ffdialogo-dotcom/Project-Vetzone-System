@@ -514,3 +514,8 @@ body.modal-open { overflow: hidden; }
 }
 
 .table .workflow-empty { text-align: left; white-space: normal; }
+/* Pet history tables scroll within their card on narrow screens. */
+.profile > div { grid-template-columns: minmax(0, 1fr); }
+.profile .card { min-width: 0; }
+@media(max-width:1100px) { .profile { grid-template-columns: minmax(0, 1fr); } }
+.profile .table-wrap { position: relative; }

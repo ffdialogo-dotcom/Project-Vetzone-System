@@ -1,6 +1,12 @@
-# V13 — VetZone VetCare System: Working Prototype
+# V14 — VetZone VetCare System: Working Prototype
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
+
+## Missed vaccination attendance (V14)
+
+Pet profile > Vaccination history > **Record missed vaccination** records a no-show against a due/overdue vaccine. Choose its vaccine/scheduled date, optional rescheduled appointment date and notes. Staff entries wait under Approvals > Medical history; admins record directly. Approved missed entries appear beneath vaccination history, separate from administered doses. The actual vaccine remains overdue until a new dose is recorded. A rescheduled date documents the attendance plan; it does not count as a administered vaccine or change its clinical due date.
+
+Duplicate entries, future/noncurrent schedules, deceased pets and stale approvals after a newer dose are blocked. Rejecting an entry permits corrected resubmission. No dose dates, original schedules, medical visit counts or last-visit dates are altered by a missed entry. Add vaccination now explicitly explains that it is for a dose actually given. Pet-history tables stay inside their cards on mobile.
 
 ## New frontend workflows (V13)
 

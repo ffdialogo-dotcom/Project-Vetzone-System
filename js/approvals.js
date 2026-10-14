@@ -21,7 +21,7 @@
   };
   function chip(status) { var s = STATUS[status] || STATUS.pending; return '<span class="chip ' + s.cls + '">' + s.text + '</span>'; }
   function when(ts) { return ts ? VZ.fmtDate(ts) + ', ' + VZ.fmtTime(ts) : ''; }
-  var KIND = { vaccination: 'Vaccination', medical: 'Sick or injured visit', checkup: 'Routine checkup', release: 'Pet release home', missed_checkup: 'Missed checkup' };
+  var KIND = { vaccination: 'Vaccination', medical: 'Sick or injured visit', checkup: 'Routine checkup', release: 'Pet release home', missed_checkup: 'Missed checkup', missed_vaccination: 'Missed vaccination' };
 
   // One shape for both kinds of submission, so they can share a table.
   function fromRequest(r) {
@@ -108,12 +108,12 @@
   function reviewRecord(rec) {
     var pet = VZ.findPet(rec.petId) || { name: 'Unknown pet', species: '', breed: '', ownerId: '' }, owner = VZ.findOwner(pet.ownerId);
     var rows = [['Pet', '<a href="pet.html?id=' + encodeURIComponent(rec.petId) + '">' + VZ.esc(pet.name) + '</a> (' + VZ.esc(pet.species) + ', ' + VZ.esc(pet.breed) + ')'], ['Owner', VZ.esc(owner.name)],
-      ['Entry type', KIND[rec.type]], [rec.type === 'vaccination' ? 'Date given' : rec.type === 'release' ? 'Release date' : rec.type === 'missed_checkup' ? 'Scheduled checkup date' : 'Visit date', VZ.fmtDate(rec.date)], [rec.type === 'vaccination' ? 'Vaccine' : rec.type === 'release' ? 'Action' : rec.type === 'missed_checkup' ? 'Attendance record' : 'Reason for visit', VZ.esc(rec.title)]];
+      ['Entry type', KIND[rec.type]], [rec.type === 'vaccination' ? 'Date given' : rec.type === 'release' ? 'Release date' : (rec.type === 'missed_checkup' || rec.type === 'missed_vaccination') ? 'Missed appointment date' : 'Visit date', VZ.fmtDate(rec.date)], [rec.type === 'vaccination' ? 'Vaccine' : rec.type === 'release' ? 'Action' : (rec.type === 'missed_checkup' || rec.type === 'missed_vaccination') ? 'Attendance record' : 'Reason for visit', VZ.esc(rec.title)]];
     if (rec.type === 'release') rows.push(['Received by', VZ.esc(rec.receivedBy)], ['Home-care notes', VZ.esc(rec.notes || 'None')]);
-    else if (rec.type === 'missed_checkup') rows.push(['Attendance', 'Owner did not attend; no completed visit.'], ['Notes', VZ.esc(rec.notes || 'None')]);
+    else if ((rec.type === 'missed_checkup' || rec.type === 'missed_vaccination')) rows.push(['Attendance', 'Owner did not attend; no completed visit.'], ['Notes', VZ.esc(rec.notes || 'None')]);
     else if (rec.type === 'vaccination') rows.push(['Notes', rec.notes ? VZ.esc(rec.notes) : 'None']);
     else rows.push(['What happened', VZ.esc(rec.happened || '')], ['Examination or procedures', VZ.esc(rec.exam || '')], ['Treatments or medications', VZ.esc(rec.treatment || '')], ['Result or outcome', VZ.esc(rec.outcome || '')]);
-    rows.push([rec.type === 'missed_checkup' ? 'Rescheduled checkup' : rec.type === 'checkup' ? 'Next checkup' : rec.type === 'vaccination' ? 'Next due' : 'Follow-up', rec.nextDue ? VZ.fmtDate(rec.nextDue) : 'None'], ['Submitted by', VZ.esc(VZ.userName(rec.by)) + ' (' + VZ.esc(rec.by) + ')'], ['Submitted', when(rec.ts)]);
+    rows.push([(rec.type === 'missed_checkup' || rec.type === 'missed_vaccination') ? 'Rescheduled appointment' : rec.type === 'checkup' ? 'Next checkup' : rec.type === 'vaccination' ? 'Next due' : 'Follow-up', rec.nextDue ? VZ.fmtDate(rec.nextDue) : 'None'], ['Submitted by', VZ.esc(VZ.userName(rec.by)) + ' (' + VZ.esc(rec.by) + ')'], ['Submitted', when(rec.ts)]);
     openReview('Review medical history entry', dl(rows), function (decision, note) { return VZ.reviewRecord(rec.id, decision, note); });
   }
 

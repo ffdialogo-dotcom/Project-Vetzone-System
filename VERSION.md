@@ -1,5 +1,5 @@
-# V13
+# V14
 
-V13 adds full-sale reversals, clinic appointments and stay/release views, controlled pet/owner edits, service billing, supplier receiving and cost/loss reports. Existing green/pink styling and all earlier features are retained. Data remains browser-local until the backend is built.
+V14 adds Record missed vaccination to the pet vaccination section, with staff approval/admin direct entry, optional reschedule notes and attendance history. The vaccine remains overdue until actually given; original doses, visit counts and last visit are preserved. Existing design retained; mobile history table overflow corrected.
 
-Download versions/V13_VetZone.zip using GitHub Download raw file. V9, V10, V11 and V12 files and branches remain available. The complete current app is at the repository root.
+Download versions/V14_VetZone.zip using GitHub Download raw file. V9–V13 files and branches remain available. The complete current app is at the repository root.

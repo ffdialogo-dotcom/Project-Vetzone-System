@@ -1196,6 +1196,7 @@
     if (note.length > 200) return { ok: false, errors: { note: 'Keep the note under 200 characters.' } };
     if (decision === 'reject' && note.length < 3) return { ok: false, errors: { note: 'Write a short reason for rejecting this entry.' } };
     if (decision !== 'approve' && decision !== 'reject') return { ok: false, error: 'Unknown decision.' };
+    if (decision === 'approve' && rec.type === 'missed_vaccination' && VZ.validateMissedVaccination) { var attendance = VZ.validateMissedVaccination(rec.petId, rec, rec.id); if (!attendance.ok) return attendance; }
     if (decision === 'approve' && (rec.type === 'release' || rec.type === 'missed_checkup')) {
       var checked = validatePetEvent(VZ.findPet(rec.petId), rec.type, rec, rec.id);
       if (Object.keys(checked.errors).length) return { ok: false, error: firstError(checked.errors) };

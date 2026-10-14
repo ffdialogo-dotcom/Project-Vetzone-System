@@ -239,4 +239,24 @@
       list.push({ kind: 'appointment', key: 'appointment:' + a.id, sig: a.date + a.time + (a.pendingRecordId ? ':review' : ''), level: a.date < V.today() ? 'red' : 'amber', sev: 3, title: pet.name + ': ' + a.purpose, text: V.fmtDate(a.date) + ' at ' + a.time, label: a.pendingRecordId ? 'Pending review' : a.date < V.today() ? 'Overdue' : 'Scheduled', href: 'clinic.html?date=' + a.date });
     }); return list;
   };
+  V.overdueVaccinations = function (petId) {
+    var latest = {};
+    V.petRecords(petId).filter(function (r) { return r.type === 'vaccination'; }).forEach(function (r) { if (!latest[r.title.toLowerCase()]) latest[r.title.toLowerCase()] = r; });
+    return Object.keys(latest).map(function (k) { return latest[k]; }).filter(function (r) { return r.nextDue && r.nextDue <= V.today(); });
+  };
+  V.validateMissedVaccination = function (petId, d, ignoreId) {
+    var pet = V.findPet(petId), source = V.overdueVaccinations(petId).filter(function (r) { return r.id === d.sourceRecordId; })[0];
+    if (!pet || pet.status === 'Deceased' || !source || !V.validDate(d.date) || d.date !== source.nextDue) return fail('This vaccination schedule is unavailable, changed or not due yet. Refresh the pet profile.');
+    if (d.nextDue && (!V.validDate(d.nextDue) || d.nextDue <= d.date || d.nextDue < V.today())) return fail('Choose a valid reschedule date after the missed date, today or later.');
+    if (String(d.notes || '').length > 500) return fail('Keep notes within 500 characters.');
+    if (V.db.records.some(function (r) { return r.id !== ignoreId && r.petId === petId && r.type === 'missed_vaccination' && r.sourceRecordId === source.id && r.date === d.date && r.status !== 'rejected'; })) return fail('This missed vaccination is already recorded or awaiting approval.');
+    return { ok: true, source: source };
+  };
+  V.addMissedVaccination = function (petId, d) {
+    var me = user('medical.submit'); if (!me) return fail('Sign in to record missed vaccination attendance.');
+    var check = V.validateMissedVaccination(petId, d); if (!check.ok) return check;
+    var direct = me.role === 'admin', rec = { id: V.uid('r'), petId: petId, type: 'missed_vaccination', title: 'Missed vaccination: ' + check.source.title, date: d.date, sourceRecordId: d.sourceRecordId, notes: String(d.notes || '').trim(), nextDue: d.nextDue || '', by: me.username, ts: V.nowStr(), status: direct ? 'approved' : 'pending', reviewedBy: direct ? me.username : '', reviewedAt: direct ? V.nowStr() : '', auto: direct };
+    V.db.records.push(rec); V.audit(direct ? 'medical.direct' : 'medical.submit', rec.title, 'No dose given; original vaccination due date retained', me); V.log('pet', rec.title + (direct ? '' : ' (waiting for approval)'), me); V.save();
+    return { ok: true, record: rec, pending: !direct };
+  };
 })();

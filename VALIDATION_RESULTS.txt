@@ -1,3 +1,19 @@
+V14 verification (October 14, 2026)
+
+PASS: check-project.js, check-workflows.js, check-release-attendance.js,
+check-v13-workflows.js, check-missed-vaccination.js,
+check-release-attendance-browser.js, check-missed-vaccination-browser.js.
+
+Verified missed vaccination roles, staff approval/rejection, admin direct,
+duplicate/date/stale schedule guards, actual-dose history and overdue reminders
+unchanged, reschedule notes, visit count/last visit preservation and persistence.
+Browser: cancelled form leaves records unchanged; staff pending -> admin approval;
+distinct vaccination attendance card; duplicate blocked; mobile form visible,
+no document horizontal overflow; no uncaught errors. Desktop/mobile screenshots
+inspected. git diff --check passed. No backend added.
+
+Earlier verification retained below:
+
 V13 verification (October 14, 2026)
 
 PASS: nine data/static suites: check-project.js, check-archive.js,

@@ -34,7 +34,7 @@
   }
   function actions(r) {
     var b = '';
-    if (VZ.canEditRecord(r) && r.type !== 'vaccination') b += '<button type="button" class="btn btn-ghost btn-sm" data-edit="' + r.id + '" aria-label="Edit visit ' + VZ.esc(r.title) + '">' + VZ.icon('edit', 14) + ' Edit</button>';
+    if (VZ.canEditRecord(r) && r.type !== 'vaccination' && r.type !== 'missed_vaccination') b += '<button type="button" class="btn btn-ghost btn-sm" data-edit="' + r.id + '" aria-label="Edit visit ' + VZ.esc(r.title) + '">' + VZ.icon('edit', 14) + ' Edit</button>';
     if (isAdmin) b += '<button type="button" class="btn btn-ghost btn-sm" data-del="' + r.id + '" aria-label="Delete entry ' + VZ.esc(r.title) + '">' + VZ.icon('trash', 14) + ' Delete</button>';
     return b;
   }
@@ -51,13 +51,13 @@
 
   // Older records may only have a title and notes, so fall back to those.
   function visitCard(r, pending) {
-    if (r.type === 'release' || r.type === 'missed_checkup') {
+    if (r.type === 'release' || r.type === 'missed_checkup' || r.type === 'missed_vaccination') {
       var release = r.type === 'release';
       return '<article class="visit"><div class="visit-head"><div><h3>' + VZ.esc(r.title) + '</h3><small>' + VZ.fmtDate(r.date) + '</small></div>' +
         '<span class="chips"><span class="chip ' + (release ? 'chip-green' : 'chip-red') + '">' + (release ? 'Release home' : 'Did not attend') + '</span>' + (pending ? statusChip(r) : '') + actions(r) + '</span></div>' +
         '<dl>' + (release ? '<div><dt>Received by</dt><dd>' + dd(r.receivedBy) + '</dd></div>' : '<div><dt>Attendance</dt><dd>Owner did not bring the pet to the clinic. No examination or treatment took place.</dd></div>') +
         '<div><dt>' + (release ? 'Home-care notes' : 'Notes') + '</dt><dd>' + dd(r.notes) + '</dd></div>' +
-        (r.nextDue ? '<div><dt>Rescheduled checkup</dt><dd>' + VZ.fmtDate(r.nextDue) + '</dd></div>' : '') +
+        (r.nextDue ? '<div><dt>' + (r.type === 'missed_vaccination' ? 'Rescheduled vaccination appointment (dose still due)' : 'Rescheduled checkup') + '</dt><dd>' + VZ.fmtDate(r.nextDue) + '</dd></div>' : '') +
         (r.reviewNote && r.status === 'rejected' ? '<div><dt>Admin note</dt><dd>' + VZ.esc(r.reviewNote) + '</dd></div>' : '') + '</dl><div class="foot">' + trail(r) + '</div></article>';
     }
     var appointment = r.type === 'checkup' ? VZ.checkupAppointment(pet.id) : null;
@@ -78,7 +78,8 @@
     var st = VZ.petState(pet), owner = VZ.findOwner(pet.ownerId), cat = pet.species === 'Cat';
     var recs = VZ.petRecords(pet.id);
     var vax = recs.filter(function (r) { return r.type === 'vaccination'; });
-    var visits = recs.filter(function (r) { return r.type !== 'vaccination'; });
+    var missedVax = recs.filter(function (r) { return r.type === 'missed_vaccination'; });
+    var visits = recs.filter(function (r) { return r.type !== 'vaccination' && r.type !== 'missed_vaccination'; });
     var subs = VZ.petSubmissions(pet.id);
     var subVax = subs.filter(function (r) { return r.type === 'vaccination'; }), subVisits = subs.filter(function (r) { return r.type !== 'vaccination'; });
     var last = VZ.lastVisit(pet.id);
@@ -128,7 +129,8 @@
     document.getElementById('pet-due-note').innerHTML = dueNote;
     document.getElementById('pet-waiting').innerHTML = waiting;
     document.getElementById('pet-visits').innerHTML = visits.length ? '<div class="visit-list">' + visits.map(function (r) { return visitCard(r, false); }).join('') + '</div>' : '<p class="empty">No approved visits yet. Add a visit record to start this pet\'s medical history.</p>';
-    document.getElementById('pet-vaccinations').innerHTML = vaccinationTable(vax, false);
+    document.getElementById('pet-vaccinations').innerHTML = vaccinationTable(vax, false) + missedVax.map(function (r) { return visitCard(r, false); }).join('');
+    document.getElementById('missed-vaccination').disabled = pet.status === 'Deceased';
 
     main.querySelectorAll('[data-edit]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -157,7 +159,7 @@
   function openVaccination() {
     var today = VZ.today();
     var m = VZ.modal('Add vaccination for ' + pet.name,
-      '<form id="rec-form" novalidate>' + (VZ.can('medical.review') ? '' : '<p class="note">This entry will be marked Pending Admin Approval. It becomes part of the medical history only after the admin approves it.</p>') +
+      '<form id="rec-form" novalidate><p class="note">Use this only after a vaccine dose was given. For an owner who did not attend, use Record missed vaccination.</p>' + (VZ.can('medical.review') ? '' : '<p class="note">This entry will be marked Pending Admin Approval. It becomes part of the medical history only after the admin approves it.</p>') +
       '<input type="hidden" name="type" value="vaccination"><div class="form-grid">' +
       field('Date given', 'date', '<input class="input" name="date" type="date" max="' + today + '" value="' + today + '">') +
       field('Next due date', 'nextDue', '<input class="input" name="nextDue" type="date">', 'Optional. Used for reminders.') +
@@ -208,6 +210,11 @@
     m.body.querySelectorAll('[data-pet-action]').forEach(function (b) { b.addEventListener('click', function () { m.close(); if (b.dataset.petAction === 'edit') VZ.ui.editPet(pet.id, render); else if (b.dataset.petAction === 'book') VZ.ui.bookAppointment(VZ.today(), pet.id, render); else VZ.ui.admit(pet.id, render); }); });
   });
   document.getElementById('release-pet').addEventListener('click', function () { openPetEvent('release'); });
+  document.getElementById('missed-vaccination').addEventListener('click', function () {
+    var sources = VZ.overdueVaccinations(pet.id);
+    if (!sources.length) { VZ.toast('There is no due or overdue vaccination to mark missed.', 'error'); return; }
+    var m = VZ.ui.form('Record missed vaccination', '<p class="note">No vaccine dose was given. The original vaccination remains due, even after rescheduling.</p>' + VZ.ui.field('Vaccine / scheduled date', 'sourceRecordId', VZ.ui.select('sourceRecordId', sources.map(function (r) { return { value: r.id, label: r.title + ' — ' + VZ.fmtDate(r.nextDue) }; }))) + VZ.ui.field('Rescheduled appointment (optional)', 'nextDue', VZ.ui.input('nextDue', '', 'date', 'min="' + VZ.today() + '"')) + VZ.ui.field('Notes (optional)', 'notes', '<textarea class="textarea" name="notes" maxlength="500"></textarea>'), function (d) { var source = sources.filter(function (r) { return r.id === d.sourceRecordId; })[0]; d.date = source ? source.nextDue : ''; return VZ.addMissedVaccination(pet.id, d); }, isAdmin ? 'Record missed vaccination' : 'Send for approval', render);
+  });
   document.getElementById('missed-checkup').addEventListener('click', function () { openPetEvent('missed_checkup'); });
   document.getElementById('pet-status').addEventListener('change', function (e) {
     var r = VZ.setPetStatus(pet.id, e.target.value);
