@@ -1,6 +1,14 @@
-# V14 — VetZone VetCare System: Working Prototype
+# V15 — VetZone VetCare System: Working Prototype
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
+
+## Fill missing loss costs (V15)
+
+Admin: Inventory > Costs & losses > the unknown loss row > **Enter purchase cost**. Enter the actual purchase cost per unit from a supplier invoice/purchase record, explain its source, confirm that this is not the selling price, then Save purchase cost. The form previews quantity × unit cost. Three lost units at ₱30 each add ₱90 to recorded loss cost.
+
+This fills the saved batch's missing unit cost and its unknown historical loss costs, including archived batches with no remaining units. It changes no stock quantities, selling prices, sale history, archive status or supplier receipts. Other batches and already-known loss costs remain unchanged. The remaining expired stock cost reflects any expired units still held in that same batch. Purchase totals continue to reflect recorded supplier receipts; entering an old batch cost does not manufacture a delivery receipt.
+
+Only admins can fill missing costs. A source note and confirmation are required; costs must be nonnegative currency amounts with at most two decimal places. Duplicate/stale submissions are blocked. The audit trail records who entered the cost, when, the unit cost and its source. Unknown costs are never guessed from selling prices. Totals with unknown units explicitly say **known** and **Incomplete**.
 
 ## Missed vaccination attendance (V14)
 

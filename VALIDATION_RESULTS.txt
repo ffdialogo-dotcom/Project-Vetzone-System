@@ -1,3 +1,24 @@
+V15 verification (October 14, 2026)
+
+PASS: check-project.js, check-v13-workflows.js,
+check-missed-vaccination.js, check-expired-stock.js, check-loss-cost.js,
+check-v13-browser.js, check-loss-cost-browser.js.
+
+Domain: three lost units at purchase unit cost 30 = 90; multiple unknown
+losses share their batch cost; remaining expired units receive known cost;
+archived/fully consumed batches supported; staff denied; invalid amounts,
+missing source/confirmation and duplicates blocked; other batches, quantities,
+archive state, selling prices, sales and receiving receipts unchanged.
+Audit metadata and costs persist on reload.
+Browser: archive -> record expired loss -> incomplete totals -> enter cost;
+cancel without changes; live preview, confirmation validation, duplicate submit;
+known total 90 after save/reload; staff cost tab/API restriction; mobile form
+and page fit without horizontal document overflow; no uncaught errors.
+Desktop/mobile screenshots inspected; existing design retained.
+git diff --check passed. No backend added.
+
+Earlier verification retained below:
+
 V14 verification (October 14, 2026)
 
 PASS: check-project.js, check-workflows.js, check-release-attendance.js,

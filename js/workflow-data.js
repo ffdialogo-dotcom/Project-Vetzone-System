@@ -97,6 +97,22 @@
     if (me.role !== 'admin') return queue('loss', d, 'Stock loss: ' + V.findProduct(check.batch.productId).name, me);
     applyLoss(d, me); V.save(); return { ok: true, pending: false };
   };
+  V.setLossPurchaseCost = function (lossId, unitCost, note, confirmed) {
+    var me = user('inventory.direct'); if (!me || me.role !== 'admin') return fail('Only an admin can enter missing purchase costs.');
+    var loss = V.db.stockLosses.filter(function (l) { return l.id === lossId; })[0];
+    if (!loss || loss.cost != null) return fail('Choose a loss with an unknown purchase cost. This cost may already have been entered.');
+    var batch = V.db.batches.filter(function (b) { return b.id === loss.batchId && b.productId === loss.productId; })[0];
+    if (!batch || !(['string', 'number'].indexOf(typeof unitCost) >= 0) || (typeof unitCost === 'string' && !unitCost.trim()) || !money(unitCost) || !text(note, 200) || confirmed !== true) return fail('Enter the actual purchase cost per unit, its source, and confirm it is not the selling price.');
+    unitCost = Number(unitCost);
+    if (batch.unitCost != null && batch.unitCost !== unitCost) return fail('This batch already has a different purchase cost. Refresh and check the batch.');
+    var losses = V.db.stockLosses.filter(function (l) { return l.batchId === batch.id && l.cost == null; });
+    if (!Number.isSafeInteger(Math.round(unitCost * 100) * batch.qty) || losses.some(function (l) { return !Number.isSafeInteger(Math.round(unitCost * 100) * l.qty); })) return fail('The batch cost total is too large.');
+    var at = V.nowStr();
+    batch.unitCost = unitCost; batch.costEnteredAt = at; batch.costEnteredBy = me.username; batch.costNote = note.trim();
+    losses.forEach(function (l) { l.unitCost = unitCost; l.cost = Math.round(unitCost * 100) * l.qty / 100; l.costEnteredAt = at; l.costEnteredBy = me.username; l.costNote = note.trim(); });
+    V.audit('stock.purchase_cost.entered', batch.id, 'Unknown purchase cost set to ' + V.money(unitCost) + ' per unit; updated ' + losses.length + ' loss records. Source: ' + note.trim(), me);
+    V.log('inventory', 'Entered missing purchase cost for ' + V.findProduct(batch.productId).name, me); return save();
+  };
   V.costSummary = function () {
     if (!user('income.view')) return null;
     var r = { purchases: 0, lossCost: 0, unknownLossUnits: 0, expiredCost: 0, unknownExpiredUnits: 0 };

@@ -1,5 +1,5 @@
-# V14
+# V15
 
-V14 adds Record missed vaccination to the pet vaccination section, with staff approval/admin direct entry, optional reschedule notes and attendance history. The vaccine remains overdue until actually given; original doses, visit counts and last visit are preserved. Existing design retained; mobile history table overflow corrected.
+V15 adds an admin action to fill missing purchase unit costs on existing stock losses, with source notes, explicit confirmation, previews and audit records. Archived/consumed batches are supported. Stock quantities, selling prices and earlier known costs remain unchanged. Incomplete totals are labeled clearly.
 
-Download versions/V14_VetZone.zip using GitHub Download raw file. V9–V13 files and branches remain available. The complete current app is at the repository root.
+Download versions/V15_VetZone.zip using GitHub Download raw file. V9–V14 files and branches remain available. The complete app is at the repository root.
