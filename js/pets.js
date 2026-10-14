@@ -64,16 +64,16 @@
     if (state.view === 'grid') {
       el.list.innerHTML = '<div class="pet-grid">' + l.map(function (x) {
         var p = x.p, cat = p.species === 'Cat';
-        return '<article class="pet-card"><div class="pet-pic' + (cat ? ' cat' : '') + '" aria-hidden="true">' + (cat ? '🐈' : '🐕') + '<span class="chip ' + x.s.cls + '">' + x.s.label + '</span></div>' +
-          '<div><h3>' + VZ.esc(p.name) + ' ' + sexMark(p.sex) + '</h3><div class="sub">' + VZ.esc(p.breed) + ' &bull; ' + VZ.ageText(p.birth) + '</div><div class="last">' + lastVisitText(p) + '</div></div>' +
+        return '<article class="pet-card"><div class="pet-pic' + (cat ? ' cat' : '') + '" aria-hidden="true">' + VZ.petPhotoHTML(p) + '<span class="chip ' + x.s.cls + '">' + x.s.label + '</span></div>' +
+          '<div><h3>' + VZ.esc(p.name) + ' ' + sexMark(p.sex) + '</h3><div class="sub">' + VZ.esc(p.breed) + ' &bull; ' + VZ.ageText(p.birth) + '</div><div class="last">' + lastVisitText(p) + '</div><div class="pet-location-line"><span class="chip ' + VZ.petLocation(p.id).cls + '">' + VZ.esc(VZ.petLocation(p.id).label) + '</span></div></div>' +
           '<div class="owner"><span>' + VZ.esc(x.o.name) + '</span><a class="btn btn-ghost btn-sm" href="pet.html?id=' + encodeURIComponent(p.id) + '" aria-label="View ' + VZ.esc(p.name) + '">View</a></div></article>';
       }).join('') + '</div>';
     } else {
-      el.list.innerHTML = '<div class="table-wrap"><table class="table"><thead><tr><th scope="col">Pet</th><th scope="col">Species</th><th scope="col">Breed</th><th scope="col">Age</th><th scope="col">Owner</th><th scope="col">Last visit</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Open</span></th></tr></thead><tbody>' +
+      el.list.innerHTML = '<div class="table-wrap"><table class="table"><thead><tr><th scope="col">Pet</th><th scope="col">Species</th><th scope="col">Breed</th><th scope="col">Age</th><th scope="col">Owner</th><th scope="col">Last visit</th><th scope="col">Status</th><th scope="col">Confinement</th><th scope="col"><span class="sr-only">Open</span></th></tr></thead><tbody>' +
         l.map(function (x) {
           var p = x.p;
-          return '<tr><td><b>' + VZ.esc(p.name) + '</b> ' + sexMark(p.sex) + '</td><td>' + p.species + '</td><td>' + VZ.esc(p.breed) + '</td><td>' + VZ.ageText(p.birth) + '</td><td>' + VZ.esc(x.o.name) + '</td><td class="nowrap">' + (VZ.lastVisit(p.id) ? VZ.fmtDate(VZ.lastVisit(p.id)) : 'None yet') + '</td>' +
-            '<td><span class="chip ' + x.s.cls + '">' + x.s.label + '</span></td><td><a class="btn btn-ghost btn-sm" href="pet.html?id=' + encodeURIComponent(p.id) + '" aria-label="View ' + VZ.esc(p.name) + '">View</a></td></tr>';
+          return '<tr><td><span class="pet-list-photo">' + VZ.petPhotoHTML(p) + '</span><b>' + VZ.esc(p.name) + '</b> ' + sexMark(p.sex) + '</td><td>' + p.species + '</td><td>' + VZ.esc(p.breed) + '</td><td>' + VZ.ageText(p.birth) + '</td><td>' + VZ.esc(x.o.name) + '</td><td class="nowrap">' + (VZ.lastVisit(p.id) ? VZ.fmtDate(VZ.lastVisit(p.id)) : 'None yet') + '</td>' +
+            '<td><span class="chip ' + x.s.cls + '">' + x.s.label + '</span></td><td><span class="chip ' + VZ.petLocation(p.id).cls + '">' + VZ.esc(VZ.petLocation(p.id).label) + '</span><br><small>' + VZ.esc(VZ.petLocation(p.id).detail) + '</small></td><td><a class="btn btn-ghost btn-sm" href="pet.html?id=' + encodeURIComponent(p.id) + '" aria-label="View ' + VZ.esc(p.name) + '">View</a></td></tr>';
         }).join('') + '</tbody></table></div>';
     }
   }

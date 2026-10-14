@@ -34,7 +34,7 @@
   }
   function actions(r) {
     var b = '';
-    if (VZ.canEditRecord(r) && r.type !== 'vaccination' && r.type !== 'missed_vaccination') b += '<button type="button" class="btn btn-ghost btn-sm" data-edit="' + r.id + '" aria-label="Edit visit ' + VZ.esc(r.title) + '">' + VZ.icon('edit', 14) + ' Edit</button>';
+    if (VZ.canEditRecord(r) && (r.type === 'medical' || r.type === 'checkup')) b += '<button type="button" class="btn btn-ghost btn-sm" data-edit="' + r.id + '" aria-label="Edit visit ' + VZ.esc(r.title) + '">' + VZ.icon('edit', 14) + ' Edit</button>';
     if (isAdmin) b += '<button type="button" class="btn btn-ghost btn-sm" data-del="' + r.id + '" aria-label="Delete entry ' + VZ.esc(r.title) + '">' + VZ.icon('trash', 14) + ' Delete</button>';
     return b;
   }
@@ -54,24 +54,24 @@
     if (r.type === 'release' || r.type === 'missed_checkup' || r.type === 'missed_vaccination') {
       var release = r.type === 'release';
       return '<article class="visit"><div class="visit-head"><div><h3>' + VZ.esc(r.title) + '</h3><small>' + VZ.fmtDate(r.date) + '</small></div>' +
-        '<span class="chips"><span class="chip ' + (release ? 'chip-green' : 'chip-red') + '">' + (release ? 'Release home' : 'Did not attend') + '</span>' + (pending ? statusChip(r) : '') + actions(r) + '</span></div>' +
-        '<dl>' + (release ? '<div><dt>Received by</dt><dd>' + dd(r.receivedBy) + '</dd></div>' : '<div><dt>Attendance</dt><dd>Owner did not bring the pet to the clinic. No examination or treatment took place.</dd></div>') +
+        '<span class="chips"><span class="chip ' + (release ? 'chip-green' : 'chip-red') + '">' + (release ? 'Release home' : 'Did not attend') + '</span>' + (pending ? statusChip(r) : '') + '</span></div>' +
+        '<details class="visit-details"><summary>View details</summary><dl>' + (release ? '<div><dt>Received by</dt><dd>' + dd(r.receivedBy) + '</dd></div>' : '<div><dt>Attendance</dt><dd>Owner did not bring the pet to the clinic. No examination or treatment took place.</dd></div>') +
         '<div><dt>' + (release ? 'Home-care notes' : 'Notes') + '</dt><dd>' + dd(r.notes) + '</dd></div>' +
         (r.nextDue ? '<div><dt>' + (r.type === 'missed_vaccination' ? 'Rescheduled vaccination appointment (dose still due)' : 'Rescheduled checkup') + '</dt><dd>' + VZ.fmtDate(r.nextDue) + '</dd></div>' : '') +
-        (r.reviewNote && r.status === 'rejected' ? '<div><dt>Admin note</dt><dd>' + VZ.esc(r.reviewNote) + '</dd></div>' : '') + '</dl><div class="foot">' + trail(r) + '</div></article>';
+        (r.reviewNote && r.status === 'rejected' ? '<div><dt>Admin note</dt><dd>' + VZ.esc(r.reviewNote) + '</dd></div>' : '') + '</dl></details><div class="foot">' + trail(r) + '</div><div class="record-actions">' + actions(r) + '</div></article>';
     }
     var appointment = r.type === 'checkup' ? VZ.checkupAppointment(pet.id) : null;
     var attendanceRecorded = !!(appointment && appointment.recordId === r.id && (appointment.missed || appointment.date !== r.nextDue));
     var nextLabel = r.type === 'checkup' ? (attendanceRecorded ? 'Originally scheduled checkup' : 'Next checkup') : 'Follow-up';
     return '<article class="visit"><div class="visit-head"><div><h3>' + VZ.esc(r.title) + '</h3><small>' + VZ.fmtDate(r.date) + '</small></div>' +
-      '<span class="chips"><span class="chip ' + (r.type === 'checkup' ? 'chip-green' : 'chip-blue') + '">' + (r.type === 'checkup' ? 'Routine checkup' : 'Sick or injured') + '</span>' + (pending ? statusChip(r) : '') + actions(r) + '</span></div>' +
-      '<dl><div><dt>What happened</dt><dd>' + dd(r.happened || r.notes) + '</dd></div>' +
+      '<span class="chips"><span class="chip ' + (r.type === 'checkup' ? 'chip-green' : 'chip-blue') + '">' + (r.type === 'checkup' ? 'Routine checkup' : 'Sick or injured') + '</span>' + (pending ? statusChip(r) : '') + '</span></div>' +
+      '<details class="visit-details"><summary>View details</summary><dl><div><dt>What happened</dt><dd>' + dd(r.happened || r.notes) + '</dd></div>' +
       '<div><dt>Examination or procedures performed</dt><dd>' + dd(r.exam) + '</dd></div>' +
       '<div><dt>Treatments or medications given</dt><dd>' + dd(r.treatment) + '</dd></div>' +
       '<div><dt>Result or outcome</dt><dd>' + dd(r.outcome) + '</dd></div>' +
       (r.nextDue ? '<div><dt>' + nextLabel + '</dt><dd>' + VZ.fmtDate(r.nextDue) + (r.type === 'checkup' && !pending && !attendanceRecorded ? dueChip(r.nextDue) : '') + '</dd></div>' : '') +
-      (r.reviewNote && r.status === 'rejected' ? '<div><dt>Admin note</dt><dd>' + VZ.esc(r.reviewNote) + '</dd></div>' : '') + '</dl>' +
-      '<div class="foot">' + trail(r) + '</div></article>';
+      (r.reviewNote && r.status === 'rejected' ? '<div><dt>Admin note</dt><dd>' + VZ.esc(r.reviewNote) + '</dd></div>' : '') + '</dl></details>' +
+      '<div class="foot">' + trail(r) + '</div><div class="record-actions">' + actions(r) + '</div></article>';
   }
 
   function render() {
@@ -98,18 +98,20 @@
         (subVax.length ? '<div style="margin-top:12px">' + vaccinationTable(subVax, true) + '</div>' : '') + '</section>';
     }
     document.getElementById('pet-avatar').className = 'big' + (cat ? ' cat' : '');
-    document.getElementById('pet-avatar').textContent = cat ? '🐈' : '🐕';
+    document.getElementById('pet-avatar').innerHTML = VZ.petPhotoHTML(pet);
     document.getElementById('pet-name').textContent = pet.name;
+    document.getElementById('pet-owner').textContent = 'Owner: ' + owner.name;
     document.getElementById('pet-state').innerHTML = '<span class="chip ' + st.cls + '">' + st.label + '</span>';
     document.getElementById('pet-facts').innerHTML =
-      '<div><dt>Species</dt><dd>' + VZ.esc(pet.species) + '</dd></div><div><dt>Breed</dt><dd>' + VZ.esc(pet.breed) + '</dd></div>' +
+      '<dl class="facts"><div><dt>Species</dt><dd>' + VZ.esc(pet.species) + '</dd></div><div><dt>Breed</dt><dd>' + VZ.esc(pet.breed) + '</dd></div>' +
       '<div><dt>Sex</dt><dd>' + sexText(pet.sex) + '</dd></div><div><dt>Age</dt><dd>' + VZ.ageText(pet.birth) + '</dd></div><div><dt>Birth date</dt><dd>' + VZ.fmtDate(pet.birth) + '</dd></div>' +
-      '<div><dt>Owner</dt><dd>' + VZ.esc(owner.name) + '</dd></div><div><dt>Owner phone</dt><dd>' + VZ.esc(owner.phone) + '</dd></div>' +
-      '<div><dt>Visits recorded</dt><dd>' + VZ.visitCount(pet.id) + '</dd></div><div><dt>Last visit</dt><dd>' + (last ? VZ.fmtDate(last) : 'None yet') + '</dd></div>';
-    var stay = VZ.activeStay(pet.id);
-    document.getElementById('pet-clinic-status').innerHTML = '<span class="chip chip-blue">' + (stay ? (stay.status === 'awaiting_pickup' ? 'Awaiting pickup' : 'In clinic') : pet.status === 'Deceased' ? 'Deceased' : 'No active clinic stay') + '</span>';
+      '</dl><details class="pet-extra-details"><summary>Owner & visit details</summary><dl class="facts"><div><dt>Owner</dt><dd>' + VZ.esc(owner.name) + '</dd></div><div><dt>Owner phone</dt><dd>' + VZ.esc(owner.phone) + '</dd></div>' +
+      '<div><dt>Visits recorded</dt><dd>' + VZ.visitCount(pet.id) + '</dd></div><div><dt>Last visit</dt><dd>' + (last ? VZ.fmtDate(last) : 'None yet') + '</dd></div></dl></details>';
+    var stay = VZ.activeStay(pet.id), location = VZ.petLocation(pet.id);
+    document.getElementById('pet-clinic-status').innerHTML = '<span class="chip ' + location.cls + '">' + VZ.esc(location.label) + '</span><p class="caption">' + VZ.esc(location.detail) + (stay && stay.confined ? '<br>Since ' + VZ.fmtDate((stay.confinementAt || stay.admittedAt).slice(0, 10)) : '') + '</p>';
+    document.getElementById('pet-clinic-actions').hidden = pet.status === 'Deceased';
     var latestRelease = recs.filter(function (r) { return r.type === 'release'; })[0];
-    document.getElementById('pet-release-details').innerHTML = latestRelease ? '<p class="note"><b>Last release home:</b> ' + VZ.fmtDate(latestRelease.date) + '<br>Received by ' + VZ.esc(latestRelease.receivedBy) + '.</p>' : '';
+    document.getElementById('pet-release-details').innerHTML = latestRelease ? '<p class="caption pet-care-note"><b>Last release home:</b> ' + VZ.fmtDate(latestRelease.date) + '<br>Received by ' + VZ.esc(latestRelease.receivedBy) + '.</p>' : '';
     document.getElementById('release-pet').textContent = isAdmin ? 'Release pet home' : 'Request pet release';
     document.getElementById('release-pet').hidden = pet.status === 'Deceased';
     document.getElementById('missed-checkup').hidden = pet.status === 'Deceased';
@@ -205,10 +207,30 @@
   }
 
   // These controls survive rendering; bind them once to avoid duplicate actions.
+  document.getElementById('change-pet-photo').addEventListener('click', function () { VZ.ui.petPhoto(pet.id, render); });
   document.getElementById('pet-more-actions').addEventListener('click', function () {
-    var m = VZ.modal('Pet actions', '<div class="manage-list"><button class="btn btn-ghost btn-block" data-pet-action="edit">Edit pet and owner details</button>' + (pet.status !== 'Deceased' ? '<button class="btn btn-ghost btn-block" data-pet-action="book">Book appointment</button>' + (!VZ.activeStay(pet.id) ? '<button class="btn btn-ghost btn-block" data-pet-action="admit">Check in to clinic</button>' : '') : '') + '</div>');
-    m.body.querySelectorAll('[data-pet-action]').forEach(function (b) { b.addEventListener('click', function () { m.close(); if (b.dataset.petAction === 'edit') VZ.ui.editPet(pet.id, render); else if (b.dataset.petAction === 'book') VZ.ui.bookAppointment(VZ.today(), pet.id, render); else VZ.ui.admit(pet.id, render); }); });
+    var m = VZ.modal('Pet actions', '<div class="manage-list"><button class="btn btn-ghost btn-block" data-pet-action="edit">Edit pet and owner details</button>' + (pet.status !== 'Deceased' ? '<button class="btn btn-ghost btn-block" data-pet-action="book">Book appointment</button>' + (!VZ.activeStay(pet.id) ? '<button class="btn btn-ghost btn-block" data-pet-action="admit">Check in for a visit</button>' : '') + '<button class="btn btn-ghost btn-block" data-pet-action="clinic">Clinic stay / confinement</button>' + (!document.getElementById('release-pet').hidden ? '<button class="btn btn-ghost btn-block" data-pet-action="release">' + (isAdmin ? 'Release pet home' : 'Request pet release') + '</button>' : '') + (!document.getElementById('request-deceased').hidden ? '<button class="btn btn-ghost btn-block" data-pet-action="death">' + (isAdmin ? 'Mark as deceased' : 'Request deceased status') + '</button>' : '') : '') + '</div>');
+    m.body.querySelectorAll('[data-pet-action]').forEach(function (b) { b.addEventListener('click', function () {
+      m.close(); var action = b.dataset.petAction;
+      if (action === 'edit') VZ.ui.editPet(pet.id, render);
+      else if (action === 'book') VZ.ui.bookAppointment(VZ.today(), pet.id, render);
+      else if (action === 'admit') VZ.ui.admit(pet.id, render);
+      else if (action === 'clinic') openClinicActions();
+      else document.getElementById(action === 'release' ? 'release-pet' : 'request-deceased').click();
+    }); });
   });
+  function openClinicActions() {
+    var stay = VZ.activeStay(pet.id), location = VZ.petLocation(pet.id);
+    var m = VZ.modal('Clinic stay: ' + pet.name, '<p><b>' + VZ.esc(location.label) + '</b><br>' + VZ.esc(location.detail) + '</p>' + (stay ? '<p class="caption">' + VZ.esc(stay.confined ? stay.confinementReason || stay.reason : stay.reason) + '</p>' : '') + '<div class="manage-list">' + (!stay ? '<button class="btn btn-ghost btn-block" data-clinic-action="visit">Check in for a visit</button>' : '') + (!stay || !stay.confined ? '<button class="btn btn-ghost btn-block" data-clinic-action="confine">Admit for confinement</button>' : '') + (stay && stay.status === 'in_clinic' && isAdmin ? '<button class="btn btn-ghost btn-block" data-clinic-action="ready">Mark ready for pickup</button>' : '') + (stay ? '<button class="btn btn-ghost btn-block" data-clinic-action="release">' + (isAdmin ? 'Release pet home' : 'Request pet release') + '</button>' : '') + '</div>');
+    m.body.querySelectorAll('[data-clinic-action]').forEach(function (b) { b.addEventListener('click', function () {
+      m.close(); var action = b.dataset.clinicAction;
+      if (action === 'visit') VZ.ui.admit(pet.id, render);
+      else if (action === 'confine') VZ.ui.confine(pet.id, render);
+      else if (action === 'release') document.getElementById('release-pet').click();
+      else { var r = VZ.markReadyForPickup(pet.id); VZ.toast(r.ok ? 'Ready for pickup.' : r.error, r.ok ? '' : 'error'); render(); }
+    }); });
+  }
+  document.getElementById('pet-clinic-actions').addEventListener('click', openClinicActions);
   document.getElementById('release-pet').addEventListener('click', function () { openPetEvent('release'); });
   document.getElementById('missed-vaccination').addEventListener('click', function () {
     var sources = VZ.overdueVaccinations(pet.id);

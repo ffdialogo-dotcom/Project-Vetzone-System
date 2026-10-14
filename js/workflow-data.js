@@ -177,11 +177,23 @@
   };
   V.refundsBetween = function (from, to) { return V.db.workflowRequests.filter(function (r) { return r.kind === 'reversal' && r.status === 'approved' && r.reviewedAt.slice(0, 10) >= from && r.reviewedAt.slice(0, 10) <= to; }); };
   V.activeStay = function (petId) { return V.db.clinicStays.filter(function (s) { return s.petId === petId && (s.status === 'in_clinic' || s.status === 'awaiting_pickup'); })[0] || null; };
-  V.admitPet = function (petId, reason) {
+  V.admitPet = function (petId, reason, confined) {
     var me = user('pets.status'), pet = V.findPet(petId); if (!me || !pet || pet.status === 'Deceased' || !text(reason, 200)) return fail('Choose a living pet and enter a reason for check-in.');
     if (V.activeStay(petId)) return fail('This pet is already in the clinic.');
-    var stay = { id: V.uid('stay'), petId: petId, admittedAt: V.nowStr(), reason: reason.trim(), by: me.username, status: 'in_clinic' };
-    V.db.clinicStays.push(stay); log('clinic.admit', pet.name, 'Pet checked in to clinic', me); V.save(); return { ok: true, stay: stay };
+    var stay = { id: V.uid('stay'), petId: petId, admittedAt: V.nowStr(), reason: reason.trim(), by: me.username, status: 'in_clinic', confined: confined === true, confinementAt: confined === true ? V.nowStr() : '', confinementId: confined === true ? V.uid('confine') : null, confinementBy: confined === true ? me.username : '', confinementReason: confined === true ? reason.trim() : '' };
+    V.db.clinicStays.push(stay); log('clinic.admit', pet.name, confined === true ? 'Pet admitted for confinement: ' + reason.trim() : 'Pet checked in for a visit', me); V.save(); return { ok: true, stay: stay };
+  };
+  V.confinePet = function (petId, reason) {
+    var me = user('pets.status'), pet = V.findPet(petId), stay = V.activeStay(petId);
+    if (!me || !pet || pet.status === 'Deceased' || !text(reason, 200)) return fail('Choose a living pet and enter the reason for confinement.');
+    if (!stay) return V.admitPet(petId, reason, true);
+    if (stay.confined) return fail('This pet is already confined in the clinic.');
+    stay.confined = true; stay.confinementId = V.uid('confine'); stay.confinementBy = me.username; stay.confinementAt = V.nowStr(); stay.confinementReason = reason.trim(); stay.status = 'in_clinic'; delete stay.readyAt;
+    log('clinic.confine', pet.name, 'Pet admitted for confinement: ' + reason.trim(), me); return save();
+  };
+  V.petLocation = function (petId) {
+    var stay = V.activeStay(petId), pet = V.findPet(petId);
+    return { confined: !!(stay && stay.confined), label: stay && stay.confined ? 'Confined in clinic' : 'Not confined', cls: stay && stay.confined ? 'chip-blue' : 'chip-grey', detail: stay ? (stay.status === 'awaiting_pickup' ? 'Awaiting pickup' : stay.confined ? 'Staying for observation or treatment' : 'In clinic for a visit') : pet && pet.status === 'Deceased' ? 'Deceased · no active clinic stay' : 'Not currently in clinic' };
   };
   V.markReadyForPickup = function (petId) {
     var me = user('medical.edit'), stay = V.activeStay(petId); if (!me || !stay || stay.status !== 'in_clinic') return fail('Only an admin can mark an in-clinic pet ready for pickup.');
@@ -275,4 +287,16 @@
     V.db.records.push(rec); V.audit(direct ? 'medical.direct' : 'medical.submit', rec.title, 'No dose given; original vaccination due date retained', me); V.log('pet', rec.title + (direct ? '' : ' (waiting for approval)'), me); V.save();
     return { ok: true, record: rec, pending: !direct };
   };
+  V.setPetPhoto = function (petId, photo) {
+    var me = user('pets.status'), pet = V.findPet(petId);
+    if (!me || !pet) return fail('Sign in and choose an existing pet to change its picture.');
+    if (typeof photo !== 'string' || (photo && (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(photo) || photo.length > 200000))) return fail('Choose a supported pet picture. It must fit within browser storage.');
+    var before = { photo: pet.photo, photoUpdatedAt: pet.photoUpdatedAt, photoUpdatedBy: pet.photoUpdatedBy }, audit = V.db.audit.slice(), activity = V.db.activity.slice();
+    pet.photo = photo; pet.photoUpdatedAt = V.nowStr(); pet.photoUpdatedBy = me.username;
+    V.audit(photo ? 'pet.photo.updated' : 'pet.photo.removed', pet.name, photo ? 'Pet picture updated' : 'Pet picture removed', me); V.log('pet', 'Picture ' + (photo ? 'updated' : 'removed') + ' for ' + pet.name, me);
+    var result = V.trySave();
+    if (!result.ok) { Object.keys(before).forEach(function (key) { if (before[key] === undefined) delete pet[key]; else pet[key] = before[key]; }); V.db.audit = audit; V.db.activity = activity; }
+    return result;
+  };
+  V.petPhotoHTML = function (pet) { return pet.photo && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(pet.photo) && pet.photo.length <= 200000 ? '<img src="' + V.esc(pet.photo) + '" alt="' + V.esc(pet.name) + '">' : pet.species === 'Cat' ? '🐈' : '🐕'; };
 })();

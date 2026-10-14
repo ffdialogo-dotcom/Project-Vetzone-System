@@ -1,5 +1,5 @@
-# V15
+# V16
 
-V15 adds an admin action to fill missing purchase unit costs on existing stock losses, with source notes, explicit confirmation, previews and audit records. Archived/consumed batches are supported. Stock quantities, selling prices and earlier known costs remain unchanged. Incomplete totals are labeled clearly.
+V16 adds explicit confinement separate from ordinary clinic visits, clear profile/list/board status, changeable pet photos, and less crowded pet-profile controls and expandable details. Existing styling and prior care workflows are retained. Photos and confinement persist in this browser.
 
-Download versions/V15_VetZone.zip using GitHub Download raw file. V9–V14 files and branches remain available. The complete app is at the repository root.
+Download versions/V16_VetZone.zip using GitHub Download raw file. V9–V15 files and branches remain available. The complete app is at the repository root.

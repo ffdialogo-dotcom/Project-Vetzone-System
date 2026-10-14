@@ -13,12 +13,16 @@
 <template id="vz-static-page">
 <a class="back" href="pets.html"><span data-icon="back"></span> Back to pet records</a>
 <div class="profile"><section class="card profile-card">
-<div id="pet-avatar" class="big" aria-hidden="true"></div><h2 id="pet-name"></h2><p id="pet-state"></p>
-<dl class="facts" id="pet-facts"></dl><p id="pet-clinic-status"></p><button type="button" class="btn btn-ghost btn-sm" id="pet-more-actions">More actions</button>
-<label class="field" style="margin-top:14px;text-align:left"><span>Treatment status</span><select class="select" id="pet-status"><option>Healthy</option><option>In Treatment</option><option value="Deceased" disabled>Deceased (admin approval required)</option></select><small class="hint">Vaccination and checkup reminders are worked out from the approved records.</small></label>
-<div id="pet-release-details"></div><button type="button" class="btn btn-sm" id="release-pet">Release pet home</button><div id="pet-deceased-details"></div><div id="pet-death-requests"></div><button type="button" class="btn btn-sm btn-ghost" id="request-deceased">Request deceased status</button><div id="pet-due-note"></div></section>
+<div id="pet-avatar" class="big"></div><button type="button" class="btn btn-ghost btn-sm" id="change-pet-photo">Change picture</button>
+<h2 id="pet-name"></h2><p id="pet-state"></p><p class="caption" id="pet-owner"></p>
+<div class="pet-location-panel"><small>Confinement status</small><div id="pet-clinic-status"></div><button type="button" class="btn btn-ghost btn-sm" id="pet-clinic-actions">Clinic actions</button></div>
+<div id="pet-facts"></div>
+<div class="pet-care-section"><label class="field"><span>Treatment status</span><select class="select" id="pet-status"><option>Healthy</option><option>In Treatment</option><option value="Deceased" disabled>Deceased</option></select></label><div id="pet-due-note"></div></div>
+<button type="button" class="btn btn-ghost btn-block" id="pet-more-actions">Pet actions</button>
+<div id="pet-release-details"></div><div id="pet-deceased-details"></div><div id="pet-death-requests"></div>
+<div hidden><button type="button" id="release-pet">Release pet home</button><button type="button" id="request-deceased">Request deceased status</button></div></section>
 <div style="display:grid;gap:18px;min-width:0"><div id="pet-waiting"></div>
-<section class="card"><div class="card-head"><h2>Visit history</h2><button type="button" class="btn btn-sm btn-ghost" id="missed-checkup">Record missed checkup</button><button type="button" class="btn btn-sm" id="add-visit"><span data-icon="plus" data-size="16"></span> Add visit record</button></div><div id="pet-visits"></div></section>
+<section class="card"><div class="card-head"><h2>Visit history</h2><div class="compact-actions"><button type="button" class="btn btn-sm btn-ghost" id="missed-checkup">Record missed checkup</button><button type="button" class="btn btn-sm" id="add-visit"><span data-icon="plus" data-size="16"></span> Add visit record</button></div></div><div id="pet-visits"></div></section>
 <section class="card"><div class="card-head"><h2>Vaccination history</h2><div class="compact-actions"><button type="button" class="btn btn-sm btn-ghost" id="missed-vaccination">Record missed vaccination</button><button type="button" class="btn btn-sm btn-ghost" id="add-rec"><span data-icon="plus" data-size="16"></span> Add vaccination</button></div></div><div id="pet-vaccinations"></div></section></div></div>
 </template>
 <noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>

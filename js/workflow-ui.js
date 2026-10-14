@@ -18,6 +18,37 @@
     f.addEventListener('submit', function (event) { event.preventDefault(); if (busy) return; busy = true; var r = submit(V.formData(f), f); if (!r.ok) { busy = false; V.showFormError(f, r.error || 'Check the form details.'); return; } m.close(); V.toast(r.pending ? 'Sent for admin approval.' : 'Saved.'); V.refreshNavBadges(); V.refreshBell(); if (done) done(r); });
     return m;
   };
+  U.petPhoto = function (petId, done) {
+    var pet = V.findPet(petId), prepared = null, revision = 0;
+    var m = U.form('Change picture for ' + pet.name, '<div class="pet-photo-preview">' + V.petPhotoHTML(pet) + '</div>' + U.field('Choose pet picture', 'photo', '<input class="input" id="pet-photo-input" type="file" accept="image/jpeg,image/png,image/webp">', 'JPG, PNG or WebP, up to 5 MB. Preview before saving.') + '<p class="caption" id="pet-photo-message" aria-live="polite"></p>' + (pet.photo ? '<button type="button" class="btn btn-ghost btn-sm" data-remove-pet-photo>Remove current picture</button>' : ''), function () { return prepared ? V.setPetPhoto(petId, prepared) : { ok: false, error: 'Choose a picture and wait for its preview before saving.' }; }, 'Save picture', done);
+    var input = m.body.querySelector('#pet-photo-input'), button = m.body.querySelector('button[type=submit]'), message = m.body.querySelector('#pet-photo-message'); button.disabled = true;
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0], version = ++revision; prepared = null; button.disabled = true;
+      if (!file) { message.textContent = ''; return; }
+      if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) { message.textContent = 'Choose a JPG, PNG or WebP picture up to 5 MB.'; return; }
+      message.textContent = 'Preparing picture…';
+      var reader = new FileReader();
+      function failed() { if (version === revision && m.el.isConnected) message.textContent = 'This picture could not be read. Choose another picture.'; }
+      reader.onerror = failed;
+      reader.onload = function () {
+        var img = new Image(); img.onerror = failed;
+        img.onload = function () {
+          if (version !== revision || !m.el.isConnected) return;
+          try {
+            var canvas = document.createElement('canvas'), c = canvas.getContext('2d'), size = Math.min(img.width, img.height);
+            if (!c || !size || img.width * img.height > 40000000) { failed(); return; }
+            canvas.width = canvas.height = 320; c.fillStyle = '#fff'; c.fillRect(0, 0, 320, 320);
+            c.drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, 320, 320);
+            var url = canvas.toDataURL('image/jpeg', 0.8);
+            if (url.length > 200000) { message.textContent = 'This picture is too detailed to save. Choose a smaller picture.'; return; }
+            prepared = url; m.body.querySelector('.pet-photo-preview').innerHTML = '<img src="' + E(url) + '" alt="New pet picture preview">'; message.textContent = 'Preview ready. Save picture to apply it.'; button.disabled = false;
+          } catch (e) { failed(); }
+        }; img.src = reader.result;
+      }; reader.readAsDataURL(file);
+    });
+    var remove = m.body.querySelector('[data-remove-pet-photo]');
+    if (remove) remove.addEventListener('click', function () { m.close(); V.confirm('Remove pet picture?', 'The pet will use its default animal picture. Medical records stay unchanged.', 'Remove picture', false).then(function (yes) { if (!yes) return; var r = V.setPetPhoto(petId, ''); V.toast(r.ok ? 'Pet picture removed.' : r.error, r.ok ? '' : 'error'); if (r.ok && done) done(r); }); });
+  };
   U.petOptions = function () { return V.db.pets.filter(function (p) { return p.status !== 'Deceased'; }).map(function (p) { return { value: p.id, label: p.name + ' — ' + V.findOwner(p.ownerId).name }; }); };
   U.editPet = function (petId, done) {
     var p = V.findPet(petId), s = V.petSnapshot(p);
@@ -36,6 +67,9 @@
       U.field('Date', 'date', U.input('date', date, 'date', 'min="' + V.today() + '"')) + U.field('Time', 'time', U.input('time', time, 'time'), 'Clinic local time.') + '</div>', function (d) { return V.bookAppointment(d); }, 'Book appointment', done);
   };
   U.admit = function (petId, done) { U.form('Check in pet', U.field('Pet', 'petId', U.select('petId', U.petOptions(), petId)) + U.field('Reason for clinic stay', 'reason', U.input('reason', '', 'text', 'maxlength="200"')), function (d) { return V.admitPet(d.petId, d.reason); }, 'Confirm check-in', done); };
+  U.confine = function (petId, done) {
+    U.form('Admit pet for confinement', '<p class="note">Use this when the pet will stay in the clinic for observation or treatment. An ordinary checkup visit is separate; treatment status and medical history stay unchanged.</p>' + U.field('Pet', 'petId', U.select('petId', U.petOptions(), petId)) + U.field('Reason for confinement', 'reason', U.input('reason', '', 'text', 'maxlength="200"')), function (d) { return V.confinePet(d.petId, d.reason); }, 'Confirm confinement', done);
+  };
   U.service = function (service, done) {
     service = service || { name: '', price: '', active: true };
     U.form(service.id ? 'Edit service' : 'Add service', U.field('Service name', 'name', U.input('name', service.name, 'text', 'maxlength="60"')) + U.field('Price', 'price', U.input('price', service.price, 'number', 'min="0" step="0.01"')) + '<label class="radio"><input type="checkbox" name="active"' + (service.active ? ' checked' : '') + '> Available for billing</label>',

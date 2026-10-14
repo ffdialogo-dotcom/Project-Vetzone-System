@@ -29,3 +29,12 @@ Automated syntax checks are NOT substitutes for this manual browser checklist.
 4. Clinic: book an appointment, reschedule and verify original history. Mark only past/due appointments attended or missed. Staff missed entries require approval; reject then retry. Verify the pet-profile checkup reminder and calendar agree after an approved linked reschedule.
 5. In clinic: check in, admin marks ready for pickup; staff requests release, admin approves. Verify clinic board closes the stay while medical treatment status/history remains. Deceased pets close their stays and cancel scheduled appointments.
 6. Verify new tabs/dialogs at desktop and 375px widths, table scrolling/pagination and reload persistence.
+
+
+## V16 pet profile review
+
+1. Pet profile > Clinic actions > Check in for a visit: verify Not confined / In clinic for a visit. Admit for confinement with a reason: verify Confined in clinic in profile, pet cards/list and clinic board. Clinical treatment status, visit counts and history stay unchanged.
+2. Admin marks ready for pickup: pet remains confined while awaiting its owner. Staff requests release: stays confined until approved. Approve release: Not confined. Admin release applies directly. Reject a stale release submitted before a new confinement and request a fresh release.
+3. Use Pet actions to edit/book/release/mark deceased. Expand Owner & visit details and View details on a history card; verify notes remain readable. Edit/delete controls stay separate from status badges.
+4. Change picture: choose an image and inspect the preview; cancel leaves the old image. Save and reload; check both pet-list views. Remove with cancellation/confirmation. Unsupported, unreadable or over-5-MB images must not overwrite a saved photo. Storage failure must keep the old photo and report failure.
+5. Check desktop and 375px profile/action/photo forms: grouped buttons, readable expandable details, correctly sized photos and no document horizontal overflow.

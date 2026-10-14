@@ -1,6 +1,15 @@
-# V15 — VetZone VetCare System: Working Prototype
+# V16 — VetZone VetCare System: Working Prototype
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
+
+## Pet profile, confinement and photos (V16)
+
+- **Confinement is separate from ordinary visits.** The pet profile shows a prominent Confined in clinic / Not confined badge. Use **Clinic actions > Admit for confinement** when the pet is staying for observation or treatment; enter a reason. Checking in for a visit or marking an appointment attended does not mark confinement. Existing older clinic stays remain ordinary visits until explicitly admitted for confinement. Treatment status and medical visit counts are separate.
+- **Pet records** cards and list rows also show confinement, and the clinic board distinguishes Confined from Visit only. Admins can mark ready for pickup. Confined status stays active while awaiting pickup and during a pending staff release; approved release or deceased status closes the stay. A release submitted before a new confinement cannot close that admission by stale approval.
+- **Less crowded controls.** Release and deceased actions are under **Pet actions**, along with editing and booking. **Clinic actions** handles check-in, confinement, pickup and release. Section buttons are grouped and spaced. The owner name stays visible; phone and visit totals are in **Owner & visit details**. Each history card uses **View details** for its long notes, and edit/delete buttons are separated from status badges. Attendance/release records do not show unsupported visit-edit buttons.
+- **Pet photos.** Click **Change picture** beneath the image, choose a JPG/PNG/WebP up to 5 MB, preview and **Save picture**. The app creates a small centered square image for browser storage. The photo appears in the profile and both pet-list views. Admins and staff can change it directly; changes are audited. Remove current picture returns to the default animal icon after confirmation. Cancel and unreadable images leave the saved picture unchanged. If storage is full or unavailable, saving fails explicitly and retains the previous picture and audit history.
+
+All workflows remain browser-local until the backend is built. No backend or production deployment was added.
 
 ## Fill missing loss costs (V15)
 

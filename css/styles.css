@@ -519,3 +519,37 @@ body.modal-open { overflow: hidden; }
 .profile .card { min-width: 0; }
 @media(max-width:1100px) { .profile { grid-template-columns: minmax(0, 1fr); } }
 .profile .table-wrap { position: relative; }
+/* V16 pet profiles: clear physical stay status and separated action groups. */
+.profile-card .big { overflow: hidden; margin-bottom: 8px; }
+.profile-card .big img, .pet-pic img, .pet-photo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.profile-card h2 { margin-top: 16px; }
+.pet-location-panel { background: var(--mint-soft); border-radius: var(--radius-sm); padding: 14px; margin: 20px 0; }
+.pet-location-panel > small { display: block; color: var(--muted); margin-bottom: 8px; }
+.pet-location-panel .caption { margin: 10px 0; line-height: 1.6; }
+.pet-extra-details { display: block; margin-top: 16px; text-align: left; }
+.pet-extra-details summary, .visit-details summary { cursor: pointer; color: var(--green-text); font-weight: 600; padding: 8px 0; }
+.pet-extra-details .facts { margin-top: 10px; }
+.pet-care-section { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 18px; text-align: left; }
+.pet-care-section .field { margin: 0 0 14px; }
+.profile-card #pet-more-actions { margin-top: 18px; }
+.pet-care-note { text-align: left; margin-top: 18px; line-height: 1.6; }
+.profile .card-head { align-items: flex-start; gap: 16px; }
+.profile .card-head h2 { margin: 0; }
+.profile .compact-actions { gap: 10px; }
+.profile .visit-head .chips { gap: 8px; }
+.visit-details { padding: 4px 0; }
+.visit-details[open] dl { padding: 12px 0 8px; gap: 16px; }
+.record-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.record-actions:empty { display: none; }
+.pet-photo-preview { width: 200px; height: 200px; margin: 0 auto 20px; background: var(--blush); border-radius: 20px; overflow: hidden; display: grid; place-items: center; font-size: 4rem; }
+.pet-pic { overflow: hidden; }
+.pet-location-line { margin-top: 12px; }
+.pet-list-photo { display: inline-grid; place-items: center; width: 36px; height: 36px; margin-right: 10px; background: var(--blush); border-radius: 10px; overflow: hidden; vertical-align: middle; }
+.pet-list-photo img { width: 100%; height: 100%; object-fit: cover; }
+@media(max-width:700px) { .profile .card-head .compact-actions { width: 100%; } .profile .card-head .compact-actions button { flex: 1 1 auto; } .record-actions { justify-content: flex-start; } }
+
+.profile { overflow-wrap: anywhere; }
+.profile .facts dd { min-width: 0; }
+
+.profile-card .big img, .pet-pic img { object-fit: contain; }
+.profile-card .big, .pet-pic, .pet-photo-preview, .pet-list-photo { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }

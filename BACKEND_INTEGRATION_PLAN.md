@@ -39,3 +39,10 @@ V13 adds browser collections `workflowRequests`, `services`, `appointments`, `cl
 - Physical stays remain separate from clinical treatment. Check-in/attendance creates no clinical examination. Staff release approval closes only the applicable stay, never a later admission. Deceased status closes active stays and cancels scheduled appointments.
 
 All permissions and stale/duplicate checks must execute on the server, using authenticated roles and database transactions. Frontend checks are currently prototype behavior.
+
+
+## V16 contracts
+
+Clinic stays now have an explicit `confined` flag and confinement ID/time/actor/reason. Ordinary attendance and check-in remain visits. Release requests capture their stay/confinement IDs; enforce these under server locks so a stale request cannot close a later admission. Confinement never substitutes for clinical treatment status.
+
+Pet photos currently use small JPEG data URLs in browser storage, with explicit failure/rollback when saving is unavailable. Production should use authenticated server uploads/object storage, validate and decode image bytes, resize on the server, restrict access by role and audit changes. Keep the preview/save/cancel/remove behavior and preserve the previous image when upload or persistence fails.

@@ -29,7 +29,7 @@ const http=require('node:http');
     async function logout(){await page.locator('#user-btn').click();await page.locator('#logout-btn').click();await page.waitForURL('**/index.html');}
     async function submitDeath(petId,notes){
       await open('pet.html?id='+petId);
-      await page.locator('#request-deceased').click();
+      await page.locator('#pet-more-actions').click();await page.locator('[data-pet-action=death]').click();
       await page.locator('#death-request-form [name=location]').selectOption('At clinic');
       await page.locator('#death-request-form [name=notes]').fill(notes);
       await page.locator('#death-request-form button[type=submit]').click();
@@ -105,7 +105,7 @@ const http=require('node:http');
     assert.ok((await page.locator('#approvals-body').innerText()).includes('Insufficient confirmation'));
     // Regression: the actual HTML form must reject a pre-birth death date.
     const third=await page.evaluate(()=>VZ.db.pets.find(p=>!VZ.db.petStatusRequests.some(r=>r.petId===p.id)).id);
-    await open('pet.html?id='+third);await page.locator('#request-deceased').click();
+    await open('pet.html?id='+third);await page.locator('#pet-more-actions').click();await page.locator('[data-pet-action=death]').click();
     await page.locator('#death-request-form [name=date]').fill('1900-01-01');await page.locator('#death-request-form [name=location]').selectOption('At clinic');await page.locator('#death-request-form button[type=submit]').click();
     assert.equal(await page.locator('#death-request-form [name=date]').getAttribute('aria-invalid'),'true');
     assert.equal(await page.evaluate(id=>VZ.db.petStatusRequests.filter(r=>r.petId===id).length,third),0);

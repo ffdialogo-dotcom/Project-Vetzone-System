@@ -1,0 +1,60 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const http=require('node:http');
+(async()=>{
+  const root=path.resolve(__dirname,'..');
+  const server=http.createServer((req,res)=>{
+    const pathname=new URL(req.url,'http://localhost').pathname;
+    const file=path.resolve(root,'.'+decodeURIComponent(pathname==='/' ? '/index.html' : pathname));
+    if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
+    fs.readFile(file,(error,data)=>{
+      if(error){res.writeHead(404);res.end();return;}
+      const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png'};
+      res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream'});res.end(data);
+    });
+  });
+  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
+  const baseURL='http://127.0.0.1:'+server.address().port+'/';
+  let browser;
+  try {
+    browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined),headless:true,args:['--no-sandbox']});
+    const context=await browser.newContext();
+    await context.route('https://fonts.googleapis.com/**',r=>r.abort());
+    const page=await context.newPage(); page.setDefaultTimeout(12000);
+    const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+    async function open(path){const r=await page.goto(baseURL+path,{waitUntil:'load'});assert.equal(r.status(),200);}
+    async function login(user,password){await page.locator('#username').fill(user);await page.locator('#password').fill(password);await page.locator('#login-form button[type=submit]').click();await page.waitForURL('**/dashboard.html');}
+    async function logout(){await page.locator('#user-btn').click();await page.locator('#logout-btn').click();await page.waitForURL('**/index.html');}
+
+    await open('index.html');await login('staff1','staff123');
+    const pet=await page.evaluate(()=>{const p=VZ.db.pets.find(p=>p.name==='Kuro');return {id:p.id,name:p.name,health:p.status,visits:VZ.visitCount(p.id),last:VZ.lastVisit(p.id),records:JSON.stringify(VZ.db.records.filter(r=>r.petId===p.id))};});
+    await open('pet.html?id='+pet.id);assert.ok((await page.locator('#pet-clinic-status').innerText()).includes('Not confined'));assert.equal(await page.locator('#release-pet').isVisible(),false);assert.equal(await page.locator('#request-deceased').isVisible(),false);
+    assert.equal(await page.locator('.visit-head .chips button').count(),0);assert.equal(await page.locator('.visit-details[open]').count(),0);await page.locator('.visit-details summary').first().click();assert.equal(await page.locator('.visit-details[open]').count(),1);await page.locator('.visit-details summary').first().click();
+    await page.locator('.pet-extra-details summary').click();assert.ok((await page.locator('#pet-facts').innerText()).includes('Owner phone'));await page.locator('.pet-extra-details summary').click();
+    await page.locator('#pet-clinic-actions').click();await page.locator('[data-clinic-action=visit]').click();await page.locator('#workflow-form [name=reason]').fill('Routine checkup visit');await page.locator('#workflow-form button[type=submit]').click();assert.ok((await page.locator('#pet-clinic-status').innerText()).includes('Not confined'));assert.ok((await page.locator('#pet-clinic-status').innerText()).includes('In clinic for a visit'));
+    await page.locator('#pet-clinic-actions').click();await page.locator('[data-clinic-action=confine]').click();await page.locator('#workflow-form [name=reason]').fill('Staying for observation');await page.locator('#workflow-form button[type=submit]').click();assert.ok((await page.locator('#pet-clinic-status').innerText()).includes('Confined in clinic'));assert.equal(await page.evaluate(id=>JSON.stringify(VZ.db.records.filter(r=>r.petId===id)),pet.id),pet.records);
+    const png=Buffer.from((await page.evaluate(()=>{const c=document.createElement('canvas');c.width=48;c.height=32;const x=c.getContext('2d');x.fillStyle='#afd9c0';x.fillRect(0,0,48,32);x.fillStyle='#de5c98';x.fillRect(16,8,16,16);return c.toDataURL('image/png');})).split(',')[1],'base64');
+    async function choosePhoto(){await page.locator('#change-pet-photo').click();await page.locator('#pet-photo-input').setInputFiles({name:'pet.png',mimeType:'image/png',buffer:png});await page.waitForFunction(()=>document.querySelector('#pet-photo-message').textContent.includes('Preview ready'));}
+    await choosePhoto();assert.equal(await page.locator('.pet-photo-preview img').count(),1);assert.ok(await page.locator('.pet-photo-preview img').evaluate(img=>img.getBoundingClientRect().height<=img.parentElement.clientHeight+1));assert.equal(await page.locator('#pet-avatar img').count(),0);await page.locator('#workflow-form [data-cancel]').click();assert.equal(await page.locator('#pet-avatar img').count(),0);
+    await page.locator('#change-pet-photo').click();await page.locator('#pet-photo-input').setInputFiles({name:'bad.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg/>')});assert.equal(await page.locator('#workflow-form button[type=submit]').isDisabled(),true);assert.ok((await page.locator('#pet-photo-message').innerText()).includes('JPG, PNG'));
+    await page.locator('#pet-photo-input').setInputFiles({name:'broken.png',mimeType:'image/png',buffer:Buffer.from('not an image')});await page.waitForFunction(()=>document.querySelector('#pet-photo-message').textContent.includes('could not be read'));assert.equal(await page.locator('#workflow-form button[type=submit]').isDisabled(),true);
+    await page.locator('#pet-photo-input').setInputFiles({name:'huge.png',mimeType:'image/png',buffer:Buffer.alloc(5*1024*1024+1)});assert.ok((await page.locator('#pet-photo-message').innerText()).includes('up to 5 MB'));await page.locator('#workflow-form [data-cancel]').click();
+    const photoAudit=await page.evaluate(()=>VZ.db.audit.filter(a=>a.action==='pet.photo.updated').length);await choosePhoto();await page.evaluate(()=>{const f=document.querySelector('#workflow-form');f.requestSubmit();f.requestSubmit();});await page.waitForSelector('#workflow-form',{state:'detached'});assert.equal(await page.locator('#pet-avatar img').count(),1);assert.equal(await page.evaluate(()=>VZ.db.audit.filter(a=>a.action==='pet.photo.updated').length),photoAudit+1);
+    assert.ok(await page.locator('#pet-avatar img').evaluate(img=>img.getBoundingClientRect().height<=img.parentElement.clientHeight+1));
+    const savedPhoto=await page.evaluate(id=>VZ.findPet(id).photo,pet.id);assert.ok(savedPhoto.startsWith('data:image/jpeg;base64,'));assert.ok(savedPhoto.length<=200000);await page.reload();assert.equal(await page.locator('#pet-avatar img').getAttribute('src'),savedPhoto);
+    await choosePhoto();await page.evaluate(()=>{window.originalStorageWrite=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==='vz_proto_db_v1')throw new DOMException('Full','QuotaExceededError');return window.originalStorageWrite.call(this,k,v);};});await page.locator('#workflow-form button[type=submit]').click();assert.ok((await page.locator('#workflow-form .form-error').innerText()).includes('previous picture was kept'));assert.equal(await page.evaluate(id=>VZ.findPet(id).photo,pet.id),savedPhoto);await page.evaluate(()=>{Storage.prototype.setItem=window.originalStorageWrite;delete window.originalStorageWrite;});await page.locator('#workflow-form [data-cancel]').click();
+    await page.screenshot({path:'/tmp/v16-pet-profile-desktop.png',fullPage:true});await page.setViewportSize({width:375,height:812});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:'/tmp/v16-pet-profile-mobile.png',fullPage:true});await choosePhoto();assert.equal(await page.locator('#workflow-form button[type=submit]').isVisible(),true);await page.screenshot({path:'/tmp/v16-pet-photo-mobile.png',fullPage:true});await page.locator('#workflow-form [data-cancel]').click();await page.setViewportSize({width:1280,height:900});
+    await open('pets.html');await page.locator('#q').fill(pet.name);assert.ok((await page.locator('#pets').innerText()).includes('Confined in clinic'));assert.equal(await page.locator('#pets .pet-pic img').getAttribute('src'),savedPhoto);await page.locator('[data-view=list]').click();assert.equal(await page.getByRole('columnheader',{name:'Confinement',exact:true}).isVisible(),true);assert.equal(await page.locator('.pet-list-photo img').getAttribute('src'),savedPhoto);assert.ok(await page.locator('.pet-list-photo img').evaluate(img=>img.getBoundingClientRect().height<=img.parentElement.clientHeight+1));
+    await open('clinic.html');await page.locator('[data-clinic-tab=board]').click();assert.ok((await page.locator('#clinic-body').innerText()).includes('Confined'));
+    await open('pet.html?id='+pet.id);await page.locator('#pet-clinic-actions').click();assert.equal(await page.locator('[data-clinic-action=ready]').count(),0);await page.locator('[data-clinic-action=release]').click();await page.locator('#pet-event-form button[type=submit]').click();const release=await page.evaluate(()=>VZ.db.records.at(-1));assert.equal(release.status,'pending');assert.ok((await page.locator('#pet-clinic-status').innerText()).includes('Confined in clinic'));
+    await logout();await login('admin','admin123');await open('approvals.html');await page.locator('[data-tab=medical]').click();await page.locator('[data-review-rec="'+release.id+'"]').click();await page.locator('[data-decide=approve]').click();await open('pet.html?id='+pet.id);assert.ok((await page.locator('#pet-clinic-status').innerText()).includes('Not confined'));assert.equal(await page.locator('#pet-avatar img').getAttribute('src'),savedPhoto);
+    await page.locator('#pet-clinic-actions').click();await page.locator('[data-clinic-action=confine]').click();await page.locator('#workflow-form [name=reason]').fill('New observation admission');await page.locator('#workflow-form button[type=submit]').click();await page.locator('#pet-clinic-actions').click();await page.locator('[data-clinic-action=ready]').click();assert.ok((await page.locator('#pet-clinic-status').innerText()).includes('Awaiting pickup'));assert.ok((await page.locator('#pet-clinic-status').innerText()).includes('Confined in clinic'));
+    await page.locator('#pet-clinic-actions').click();await page.locator('[data-clinic-action=release]').click();await page.locator('#pet-event-form [name=receivedBy]').fill('Owner for second stay');await page.locator('#pet-event-form button[type=submit]').click();assert.ok((await page.locator('#pet-clinic-status').innerText()).includes('Not confined'));
+    await page.locator('#change-pet-photo').click();await page.locator('[data-remove-pet-photo]').click();await page.locator('[data-no]').click();assert.equal(await page.locator('#pet-avatar img').getAttribute('src'),savedPhoto);await page.locator('#change-pet-photo').click();await page.locator('[data-remove-pet-photo]').click();await page.locator('[data-yes]').click();assert.equal(await page.locator('#pet-avatar img').count(),0);await page.reload();assert.equal(await page.locator('#pet-avatar img').count(),0);
+    assert.equal(await page.evaluate(id=>VZ.findPet(id).status,pet.id),pet.health);assert.equal(await page.evaluate(id=>VZ.visitCount(id),pet.id),pet.visits);assert.equal(await page.evaluate(id=>VZ.lastVisit(id),pet.id),pet.last);assert.deepEqual(errors,[]);
+    console.log('PASS: V16 browser separate visit/confinement, profile/list/board badges, compact actions and expandable details, staff/admin pickup/releases, pet-photo preview/cancel/save/remove, malformed/large images, quota rollback, duplicate submit, cards/list thumbnails, desktop/mobile and persistence.');
+    await context.close();
+  } finally {if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
+})().catch(e=>{console.error(e);process.exitCode=1;});

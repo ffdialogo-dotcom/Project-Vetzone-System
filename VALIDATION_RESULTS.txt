@@ -1,3 +1,31 @@
+V16 verification (October 14, 2026)
+
+PASS: twelve data/static suites: check-project.js, check-archive.js,
+check-static-pages.js, check-feature-ids-deceased.js,
+check-death-date-validation.js, check-workflows.js,
+check-release-attendance.js, check-expired-stock.js, check-v13-workflows.js,
+check-missed-vaccination.js, check-loss-cost.js, check-pet-profile-v16.js.
+PASS: six Chromium browser suites: check-pet-browser.js,
+check-workflows-browser.js, check-release-attendance-browser.js,
+check-v13-browser.js, check-missed-vaccination-browser.js,
+check-pet-profile-v16-browser.js.
+
+V16: ordinary visit versus confinement, direct admission and promotion,
+profile/cards/list/clinic board status, staff/admin release and pickup,
+same-second stale release after confinement, deceased closure, separate
+clinical status/counts/history; pet-photo roles, validation and isolation,
+preview/cancel/save/remove, bad/oversized images, duplicate submit, storage
+quota failure rollback, audit and reload persistence.
+
+Profile buttons grouped/spaced; long record and owner/visit details expandable.
+Existing browser tests navigate relocated care buttons through Pet actions
+and expand history details before checking content; their behavior assertions
+are retained. Desktop and 375px mobile screenshots inspected. Picture sizing
+fits preview/profile/list frames; mobile document has no horizontal overflow.
+No uncaught browser errors. git diff --check passed. No backend added.
+
+Earlier verification retained below:
+
 V15 verification (October 14, 2026)
 
 PASS: check-project.js, check-v13-workflows.js,

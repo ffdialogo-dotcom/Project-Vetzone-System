@@ -336,6 +336,7 @@
       if (!storageWarned) { storageWarned = true; alert('This browser is blocking storage, so changes will not be saved after you leave this page.'); }
     }
   };
+  VZ.trySave = function () { try { localStorage.setItem(DB_KEY, JSON.stringify(VZ.db)); return { ok: true }; } catch (e) { return { ok: false, error: 'This browser could not save the picture. Storage may be full or unavailable. The previous picture was kept.' }; } };
   VZ.resetDemo = function () { VZ.db = migrate(seed()); VZ.save(); };
   // Older saved data from earlier versions gets the new parts it needs.
   function migrate(db) {
@@ -1049,7 +1050,7 @@
     var errors = {}, clean = {
       date: String(details.date || ''), notes: String(details.notes || '').trim(),
       receivedBy: String(details.receivedBy || '').trim(), nextDue: String(details.nextDue || ''),
-      sourceRecordId: details.sourceRecordId || null, appointmentId: details.appointmentId || null
+      sourceRecordId: details.sourceRecordId || null, appointmentId: details.appointmentId || null, stayId: null, confinementId: null
     };
     if (!pet || pet.status === 'Deceased') return { errors: { date: 'This action is not available for a deceased or missing pet.' }, clean: clean };
     if (type !== 'release' && type !== 'missed_checkup') errors.type = 'Choose release or missed checkup.';
@@ -1060,6 +1061,8 @@
       if (!clean.receivedBy || clean.receivedBy.length > 80) errors.receivedBy = 'Enter the name of the person taking the pet home (up to 80 characters).';
       clean.sourceRecordId = null; clean.nextDue = ''; clean.appointmentId = null;
       var stay = VZ.activeStay ? VZ.activeStay(pet.id) : null;
+      clean.stayId = stay ? stay.id : null; clean.confinementId = stay ? stay.confinementId || null : null;
+      if (ignoreId && stay && ((details.stayId && details.stayId !== stay.id) || (stay.confined && details.confinementId !== stay.confinementId))) errors.date = 'The clinic stay or confinement changed after this request. Submit a new release.';
       if (stay && (clean.date < stay.admittedAt.slice(0, 10) || (details.ts && details.ts < stay.admittedAt))) errors.date = 'The pet was checked in after this release date or request. Submit a new release.';
     } else {
       var appointment = VZ.checkupAppointment(pet.id);
@@ -1088,7 +1091,7 @@
     if (Object.keys(validated.errors).length) return { ok: false, errors: validated.errors };
     var c = validated.clean, st = statusFor(me);
     var rec = { id: VZ.uid('r'), petId: petId, type: type, date: c.date, title: type === 'release' ? 'Released home' : 'Owner did not attend checkup',
-      notes: c.notes, receivedBy: type === 'release' ? c.receivedBy : '', sourceRecordId: c.sourceRecordId, appointmentId: c.appointmentId, nextDue: c.nextDue, by: me.username, ts: VZ.nowStr() };
+      notes: c.notes, receivedBy: type === 'release' ? c.receivedBy : '', stayId: c.stayId, confinementId: c.confinementId, sourceRecordId: c.sourceRecordId, appointmentId: c.appointmentId, nextDue: c.nextDue, by: me.username, ts: VZ.nowStr() };
     Object.keys(st).forEach(function (key) { rec[key] = st[key]; });
     VZ.db.records.push(rec);
     if (!st.status || st.status === 'approved') { if (VZ.syncCareEvent) VZ.syncCareEvent(rec); }
