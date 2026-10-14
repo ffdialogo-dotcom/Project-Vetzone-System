@@ -1,3 +1,5 @@
+V11 adds pet release and missed-checkup records. Admins finalize directly; staff submit through Approvals > Medical history. Approved reschedules update checkup reminders. Releases and missed attendance preserve clinical visit counts, last clinic-visit dates, treatment status and existing history.
+
 # VetZone workflow update — prototype
 
 - Admin display IDs use ADM-0001; staff use STF-0001; inventory item codes use ITM-0001. Display sequences persist and deleted/rejected IDs are not reused. Internal record IDs are unchanged. Role changes assign the appropriate display prefix.

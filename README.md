@@ -1,6 +1,14 @@
-# V10 — VetZone VetCare System: Working Prototype
+# V11 — VetZone VetCare System: Working Prototype
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
+
+## Pet release and missed checkups (V11)
+
+- Open **Pet records**, choose a pet, and click **Release pet home** (admin) or **Request pet release** (staff). Enter the release date, the person taking the pet home, and optional home-care notes. Admin entries are finalized immediately; staff entries wait for approval.
+- Admins approve or reject staff release and attendance entries under **Approvals > Medical history**. Rejection requires a note.
+- In **Visit history**, click **Record missed checkup** when the owner does not attend. If a checkup schedule exists, its date is used and an optional reschedule date is offered. Upcoming scheduled checkups cannot be marked missed. If no schedule was saved, enter the actual missed date and notes.
+- Approved missed appointments appear as **Owner did not attend checkup**. They leave completed-visit counts and the last clinic-visit date unchanged. Approved rescheduling updates reminders; an unrescheduled missed appointment stays visible as missed/overdue.
+- Releases appear in history and **Last release home** on the pet profile. Treatment status and earlier medical history are preserved.
 
 ## Updated workflows
 

@@ -1,3 +1,12 @@
+V11 adds release-home and missed-checkup workflows, using the existing admin/staff approval rules. The two new checks are:
+
+```bash
+node tests/check-release-attendance.js
+node tests/check-release-attendance-browser.js
+```
+
+They verify approval/rejection, form validation, duplicate guards, release recipients, preserved clinical state/history/counts, attendance and rescheduling, future/stale schedules, reload persistence and mobile forms. All ten current checks passed. V10 saved data loads without modifying any existing database records.
+
 V10 fixes the duplicate Grooming dropdown entry and positions sales-detail panels above chart dots within the visible screen. Previous V9 fixes and workflows are retained.
 
 # Changes and validation

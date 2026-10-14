@@ -876,9 +876,21 @@
     var me = actor(); if (!me) return [];
     return newestFirst(VZ.db.records.filter(function (r) { return r.petId === petId && !isApproved(r) && (me.role === 'admin' || r.by === me.username); }));
   };
+  // Missed appointments are separate history entries, never completed checkups.
+  VZ.checkupAppointment = function (petId) {
+    var records = VZ.petRecords(petId);
+    var source = records.filter(function (r) { return r.type === 'checkup'; })[0];
+    if (!source || !source.nextDue) return null;
+    var date = source.nextDue, missed = false;
+    records.filter(function (r) { return r.type === 'missed_checkup' && r.sourceRecordId === source.id; }).reverse().forEach(function (r) {
+      if (r.date !== date) return;
+      if (r.nextDue) { date = r.nextDue; missed = false; } else missed = true;
+    });
+    return { recordId: source.id, date: date, missed: missed };
+  };
   // Due dates come from the latest approved record of each vaccine or checkup, so a new one replaces the old due date.
   VZ.petState = function (pet) {
-    var today = VZ.today(), latest = {}, vaxDue = false, checkDue = false, overdue = false, dueItems = [];
+    var today = VZ.today(), latest = {}, vaxDue = false, checkDue = false, checkMissed = false, overdue = false, dueItems = [];
     VZ.petRecords(pet.id).forEach(function (r) {
       if (r.type !== 'vaccination' && r.type !== 'checkup') return;
       var key = r.type === 'checkup' ? 'checkup' : r.type + '|' + r.title.toLowerCase();
@@ -886,18 +898,21 @@
     });
     Object.keys(latest).forEach(function (k) {
       var r = latest[k];
-      if (!r.nextDue) return;
-      var d = VZ.diffDays(today, r.nextDue);
+      var appointment = r.type === 'checkup' ? VZ.checkupAppointment(pet.id) : null;
+      var dueDate = appointment ? appointment.date : r.nextDue;
+      if (!dueDate) return;
+      var missed = !!(appointment && appointment.missed);
+      var d = VZ.diffDays(today, dueDate);
       if (d <= VZ.DUE_DAYS) {
-        if (r.type === 'vaccination') vaxDue = true; else checkDue = true;
+        if (r.type === 'vaccination') vaxDue = true; else { checkDue = true; checkMissed = missed; }
         if (d < 0) overdue = true;
-        dueItems.push({ key: k, type: r.type, title: r.title, due: r.nextDue, days: d });
+        dueItems.push({ key: k, type: r.type, title: missed ? 'Missed checkup' : r.title, due: dueDate, days: d, missed: missed });
       }
     });
-    if (pet.status === 'Deceased') return { label: 'Deceased', cls: 'chip-grey', vaxDue: false, checkDue: false, overdue: false, dueItems: [] };
-    var label = pet.status === 'In Treatment' ? 'In Treatment' : vaxDue ? 'Vaccination Due' : checkDue ? 'Checkup Due' : 'Healthy';
-    var cls = label === 'Healthy' ? 'chip-green' : label === 'In Treatment' ? 'chip-blue' : overdue ? 'chip-red' : 'chip-amber';
-    return { label: label, cls: cls, vaxDue: vaxDue, checkDue: checkDue, overdue: overdue, dueItems: dueItems };
+    if (pet.status === 'Deceased') return { label: 'Deceased', cls: 'chip-grey', vaxDue: false, checkDue: false, checkMissed: false, overdue: false, dueItems: [] };
+    var label = pet.status === 'In Treatment' ? 'In Treatment' : checkMissed ? 'Checkup Missed' : vaxDue ? 'Vaccination Due' : checkDue ? 'Checkup Due' : 'Healthy';
+    var cls = label === 'Healthy' ? 'chip-green' : label === 'In Treatment' ? 'chip-blue' : (overdue || checkMissed) ? 'chip-red' : 'chip-amber';
+    return { label: label, cls: cls, vaxDue: vaxDue, checkDue: checkDue, checkMissed: checkMissed, overdue: overdue, dueItems: dueItems };
   };
   function digits(s) { return String(s).replace(/\D/g, ''); }
   VZ.addPet = function (d) {
@@ -938,18 +953,15 @@
     var me = actor(); if (!me) return [];
     return VZ.db.petStatusRequests.filter(function (r) { return (me.role === 'admin' || r.byId === me.id) && (!status || r.status === status); });
   };
-  function deathDateError(pet, date) {
-    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date.slice(0, 4) === '0000') {
-      return 'Enter a valid date of death.';
-    }
+  function petDateError(pet, date, label) {
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date.slice(0, 4) === '0000') return 'Enter a valid ' + label + '.';
     var parsed = new Date(date + 'T00:00:00Z');
-    if (isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
-      return 'Enter a valid calendar date of death.';
-    }
-    if (date > VZ.today()) return 'The date of death cannot be in the future.';
-    if (pet.birth && date < pet.birth) return 'The date of death cannot be before the pet\'s birth date.';
+    if (isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) return 'Enter a valid calendar ' + label + '.';
+    if (date > VZ.today()) return 'The ' + label + ' cannot be in the future.';
+    if (pet.birth && date < pet.birth) return 'The ' + label + ' cannot be before the pet\'s birth date.';
     return '';
   }
+  function deathDateError(pet, date) { return petDateError(pet, date, 'date of death'); }
   VZ.requestPetDeath = function (petId, details) {
     var me = actor(); if (!me) return needSignIn(); if (!VZ.can('pets.status')) return denied();
     var pet = VZ.findPet(petId), errors = {};
@@ -1002,6 +1014,52 @@
       ? { status: 'approved', reviewedBy: me.username, reviewedAt: VZ.nowStr(), reviewNote: 'Entered by admin', auto: true }
       : { status: 'pending', reviewedBy: '', reviewedAt: '', reviewNote: '', auto: false };
   }
+  function validatePetEvent(pet, type, details, ignoreId) {
+    var errors = {}, clean = {
+      date: String(details.date || ''), notes: String(details.notes || '').trim(),
+      receivedBy: String(details.receivedBy || '').trim(), nextDue: String(details.nextDue || ''),
+      sourceRecordId: details.sourceRecordId || null
+    };
+    if (!pet || pet.status === 'Deceased') return { errors: { date: 'This action is not available for a deceased or missing pet.' }, clean: clean };
+    if (type !== 'release' && type !== 'missed_checkup') errors.type = 'Choose release or missed checkup.';
+    var dateError = petDateError(pet, clean.date, type === 'release' ? 'release date' : 'scheduled checkup date');
+    if (dateError) errors.date = dateError;
+    if (clean.notes.length > 500) errors.notes = 'Keep notes within 500 characters.';
+    if (type === 'release') {
+      if (!clean.receivedBy || clean.receivedBy.length > 80) errors.receivedBy = 'Enter the name of the person taking the pet home (up to 80 characters).';
+      clean.sourceRecordId = null; clean.nextDue = '';
+    } else {
+      var appointment = VZ.checkupAppointment(pet.id);
+      if (clean.sourceRecordId && (!appointment || appointment.recordId !== clean.sourceRecordId || appointment.date !== clean.date || appointment.missed)) {
+        errors.date = 'This checkup schedule has changed or was already marked missed. Refresh the pet profile.';
+      }
+      if (clean.nextDue) {
+        var parsed = new Date(clean.nextDue + 'T00:00:00Z');
+        if (!clean.sourceRecordId) errors.nextDue = 'Rescheduling requires an existing checkup schedule.';
+        else if (!/^\d{4}-\d{2}-\d{2}$/.test(clean.nextDue) || isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== clean.nextDue || clean.nextDue <= clean.date || clean.nextDue < VZ.today()) errors.nextDue = 'Choose a valid reschedule date after the missed date, today or later.';
+      }
+    }
+    var duplicate = VZ.db.records.some(function (r) {
+      if (r.id === ignoreId || r.petId !== pet.id || r.type !== type || r.status === 'rejected') return false;
+      if (type === 'release' && r.status === 'pending') return true;
+      return r.date === clean.date && (type === 'release' ? String(r.receivedBy || '').toLowerCase() === clean.receivedBy.toLowerCase() && (r.notes || '') === clean.notes : true);
+    });
+    if (duplicate) errors.date = 'This event is already recorded or waiting for approval.';
+    return { errors: errors, clean: clean };
+  }
+  VZ.addPetEvent = function (petId, type, details) {
+    var me = actor(); if (!me) return needSignIn(); if (!VZ.can('medical.submit')) return denied();
+    var pet = VZ.findPet(petId), validated = validatePetEvent(pet, type, details || {});
+    if (Object.keys(validated.errors).length) return { ok: false, errors: validated.errors };
+    var c = validated.clean, st = statusFor(me);
+    var rec = { id: VZ.uid('r'), petId: petId, type: type, date: c.date, title: type === 'release' ? 'Released home' : 'Owner did not attend checkup',
+      notes: c.notes, receivedBy: type === 'release' ? c.receivedBy : '', sourceRecordId: c.sourceRecordId, nextDue: c.nextDue, by: me.username, ts: VZ.nowStr() };
+    Object.keys(st).forEach(function (key) { rec[key] = st[key]; });
+    VZ.db.records.push(rec);
+    VZ.audit(st.status === 'pending' ? 'medical.submit' : 'medical.direct', recordLabel(rec), type === 'release' ? 'Pet release to ' + c.receivedBy : 'Missed appointment; no clinic visit recorded', me);
+    VZ.log('pet', rec.title + ' for ' + pet.name + (st.status === 'pending' ? ' (waiting for approval)' : ''), me);
+    VZ.save(); return { ok: true, record: rec, pending: st.status === 'pending' };
+  };
   function recordLabel(r) {
     var pet = VZ.findPet(r.petId);
     return (pet ? pet.name : 'Unknown pet') + ': ' + r.title + ' (' + VZ.fmtDate(r.date) + ')';
@@ -1101,6 +1159,10 @@
     if (note.length > 200) return { ok: false, errors: { note: 'Keep the note under 200 characters.' } };
     if (decision === 'reject' && note.length < 3) return { ok: false, errors: { note: 'Write a short reason for rejecting this entry.' } };
     if (decision !== 'approve' && decision !== 'reject') return { ok: false, error: 'Unknown decision.' };
+    if (decision === 'approve' && (rec.type === 'release' || rec.type === 'missed_checkup')) {
+      var checked = validatePetEvent(VZ.findPet(rec.petId), rec.type, rec, rec.id);
+      if (Object.keys(checked.errors).length) return { ok: false, error: firstError(checked.errors) };
+    }
     rec.status = decision === 'approve' ? 'approved' : 'rejected';
     rec.reviewedBy = me.username; rec.reviewedAt = VZ.nowStr(); rec.reviewNote = note; rec.auto = false;
     VZ.audit('medical.' + decision, recordLabel(rec), 'Submitted by ' + rec.by + (note ? '. Note: ' + note : ''), me);
@@ -1121,7 +1183,7 @@
     VZ.save();
     return { ok: true };
   };
-  VZ.lastVisit = function (petId) { var r = VZ.petRecords(petId)[0]; return r ? r.date : null; };
+  VZ.lastVisit = function (petId) { var r = VZ.petRecords(petId).filter(function (r) { return r.type === 'medical' || r.type === 'checkup' || r.type === 'vaccination'; })[0]; return r ? r.date : null; };
   VZ.visitCount = function (petId) {
     return VZ.petRecords(petId).filter(function (r) { return r.type === 'medical' || r.type === 'checkup'; }).length;
   };
@@ -1315,10 +1377,10 @@
     VZ.db.pets.forEach(function (pet) {
       var owner = VZ.findOwner(pet.ownerId);
       VZ.petState(pet).dueItems.forEach(function (d) {
-        var overdue = d.days < 0, what = d.type === 'checkup' ? 'Checkup' : d.title;
+        var overdue = d.days < 0, what = d.missed ? 'Missed checkup' : d.type === 'checkup' ? 'Checkup' : d.title;
         var when = d.days === 0 ? 'is due today' : overdue ? 'is overdue by ' + (-d.days) + ' day(s)' : 'is coming up in ' + d.days + ' day(s)';
-        list.push({ kind: 'pet', key: 'pet:' + pet.id + ':' + d.key, sig: d.due + (overdue ? ':overdue' : ':upcoming'), level: overdue ? 'red' : 'amber', sev: overdue ? 5 : 2,
-          title: pet.name + ' (owner: ' + owner.name + ')', text: what + ' ' + when + '. Scheduled ' + VZ.fmtDate(d.due) + '.', label: overdue ? 'Overdue' : 'Upcoming', href: 'pet.html?id=' + encodeURIComponent(pet.id) });
+        list.push({ kind: 'pet', key: 'pet:' + pet.id + ':' + d.key, sig: d.due + (d.missed ? ':missed' : overdue ? ':overdue' : ':upcoming'), level: overdue ? 'red' : 'amber', sev: overdue ? 5 : 2,
+          title: pet.name + ' (owner: ' + owner.name + ')', text: what + ' ' + when + '. Scheduled ' + VZ.fmtDate(d.due) + '.', label: d.missed ? 'Did not attend' : overdue ? 'Overdue' : 'Upcoming', href: 'pet.html?id=' + encodeURIComponent(pet.id) });
       });
     });
     if (me.role === 'admin') {

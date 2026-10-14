@@ -1,3 +1,29 @@
+V11 verification (October 14, 2026)
+
+PASS: all ten current checks, including the three Chromium browser suites.
+  check-project.js, check-archive.js, check-static-pages.js,
+  check-feature-ids-deceased.js, check-death-date-validation.js,
+  check-workflows.js, check-release-attendance.js,
+  check-pet-browser.js, check-workflows-browser.js,
+  check-release-attendance-browser.js.
+
+New release/attendance checks verified:
+- Staff requests remain pending until admin approval; admins finalize directly.
+- Release cancellation, recipient/date validation and duplicate confirmation guard.
+- Approval/rejection, required rejection notes and resubmission.
+- Pending reschedules preserve reminders; approved reschedules update the date.
+- Unrescheduled missed checkups remain visible as missed/overdue.
+- Completed-visit totals, last clinic visit, treatment status and earlier history preserved.
+- Future appointments, changed schedules and deceased-pet actions blocked.
+- Records persist after reload; new release forms work at a mobile viewport.
+- No uncaught browser errors during browser checks.
+
+PASS: migration using the actual V10 app.js and saved database. All existing
+records, IDs, users, sequence counters and other database fields preserved.
+
+Earlier version verification is retained below. Full manual regression and
+production/backend security are not claimed.
+
 V10 verification (October 14, 2026)
 
 PASS: tests/check-project.js — JavaScript parsing, local asset links and core sale checks.

@@ -51,14 +51,25 @@
 
   // Older records may only have a title and notes, so fall back to those.
   function visitCard(r, pending) {
-    var nextLabel = r.type === 'checkup' ? 'Next checkup' : 'Follow-up';
+    if (r.type === 'release' || r.type === 'missed_checkup') {
+      var release = r.type === 'release';
+      return '<article class="visit"><div class="visit-head"><div><h3>' + VZ.esc(r.title) + '</h3><small>' + VZ.fmtDate(r.date) + '</small></div>' +
+        '<span class="chips"><span class="chip ' + (release ? 'chip-green' : 'chip-red') + '">' + (release ? 'Release home' : 'Did not attend') + '</span>' + (pending ? statusChip(r) : '') + actions(r) + '</span></div>' +
+        '<dl>' + (release ? '<div><dt>Received by</dt><dd>' + dd(r.receivedBy) + '</dd></div>' : '<div><dt>Attendance</dt><dd>Owner did not bring the pet to the clinic. No examination or treatment took place.</dd></div>') +
+        '<div><dt>' + (release ? 'Home-care notes' : 'Notes') + '</dt><dd>' + dd(r.notes) + '</dd></div>' +
+        (r.nextDue ? '<div><dt>Rescheduled checkup</dt><dd>' + VZ.fmtDate(r.nextDue) + '</dd></div>' : '') +
+        (r.reviewNote && r.status === 'rejected' ? '<div><dt>Admin note</dt><dd>' + VZ.esc(r.reviewNote) + '</dd></div>' : '') + '</dl><div class="foot">' + trail(r) + '</div></article>';
+    }
+    var appointment = r.type === 'checkup' ? VZ.checkupAppointment(pet.id) : null;
+    var attendanceRecorded = !!(appointment && appointment.recordId === r.id && (appointment.missed || appointment.date !== r.nextDue));
+    var nextLabel = r.type === 'checkup' ? (attendanceRecorded ? 'Originally scheduled checkup' : 'Next checkup') : 'Follow-up';
     return '<article class="visit"><div class="visit-head"><div><h3>' + VZ.esc(r.title) + '</h3><small>' + VZ.fmtDate(r.date) + '</small></div>' +
       '<span class="chips"><span class="chip ' + (r.type === 'checkup' ? 'chip-green' : 'chip-blue') + '">' + (r.type === 'checkup' ? 'Routine checkup' : 'Sick or injured') + '</span>' + (pending ? statusChip(r) : '') + actions(r) + '</span></div>' +
       '<dl><div><dt>What happened</dt><dd>' + dd(r.happened || r.notes) + '</dd></div>' +
       '<div><dt>Examination or procedures performed</dt><dd>' + dd(r.exam) + '</dd></div>' +
       '<div><dt>Treatments or medications given</dt><dd>' + dd(r.treatment) + '</dd></div>' +
       '<div><dt>Result or outcome</dt><dd>' + dd(r.outcome) + '</dd></div>' +
-      (r.nextDue ? '<div><dt>' + nextLabel + '</dt><dd>' + VZ.fmtDate(r.nextDue) + (r.type === 'checkup' && !pending ? dueChip(r.nextDue) : '') + '</dd></div>' : '') +
+      (r.nextDue ? '<div><dt>' + nextLabel + '</dt><dd>' + VZ.fmtDate(r.nextDue) + (r.type === 'checkup' && !pending && !attendanceRecorded ? dueChip(r.nextDue) : '') + '</dd></div>' : '') +
       (r.reviewNote && r.status === 'rejected' ? '<div><dt>Admin note</dt><dd>' + VZ.esc(r.reviewNote) + '</dd></div>' : '') + '</dl>' +
       '<div class="foot">' + trail(r) + '</div></article>';
   }
@@ -94,6 +105,14 @@
       '<div><dt>Sex</dt><dd>' + sexText(pet.sex) + '</dd></div><div><dt>Age</dt><dd>' + VZ.ageText(pet.birth) + '</dd></div><div><dt>Birth date</dt><dd>' + VZ.fmtDate(pet.birth) + '</dd></div>' +
       '<div><dt>Owner</dt><dd>' + VZ.esc(owner.name) + '</dd></div><div><dt>Owner phone</dt><dd>' + VZ.esc(owner.phone) + '</dd></div>' +
       '<div><dt>Visits recorded</dt><dd>' + VZ.visitCount(pet.id) + '</dd></div><div><dt>Last visit</dt><dd>' + (last ? VZ.fmtDate(last) : 'None yet') + '</dd></div>';
+    var latestRelease = recs.filter(function (r) { return r.type === 'release'; })[0];
+    document.getElementById('pet-release-details').innerHTML = latestRelease ? '<p class="note"><b>Last release home:</b> ' + VZ.fmtDate(latestRelease.date) + '<br>Received by ' + VZ.esc(latestRelease.receivedBy) + '.</p>' : '';
+    document.getElementById('release-pet').textContent = isAdmin ? 'Release pet home' : 'Request pet release';
+    document.getElementById('release-pet').hidden = pet.status === 'Deceased';
+    document.getElementById('missed-checkup').hidden = pet.status === 'Deceased';
+    var scheduled = VZ.checkupAppointment(pet.id);
+    document.getElementById('missed-checkup').disabled = !!(scheduled && !scheduled.missed && scheduled.date > VZ.today());
+    document.getElementById('missed-checkup').title = scheduled && scheduled.date > VZ.today() ? 'This scheduled checkup has not occurred yet.' : '';
     document.getElementById('pet-status').value = pet.status;
     document.getElementById('pet-status').disabled = pet.status === 'Deceased';
     var death = pet.deceased;
@@ -155,7 +174,35 @@
     });
   }
 
+  function openPetEvent(type) {
+    var release = type === 'release', owner = VZ.findOwner(pet.ownerId);
+    var appointment = release ? null : VZ.checkupAppointment(pet.id);
+    var linked = !!(appointment && !appointment.missed);
+    var date = linked ? appointment.date : VZ.today();
+    var m = VZ.modal(release ? 'Release ' + pet.name + ' home' : 'Record missed checkup for ' + pet.name,
+      '<form id="pet-event-form" novalidate><p class="note">' +
+      (release ? 'Record who takes the pet home and any home-care instructions. Treatment status and existing history are preserved.' : 'Record that the owner did not attend. This does not count as a completed visit.') +
+      (isAdmin ? ' This is finalized when you confirm.' : ' An admin must approve your submission.') + '</p>' +
+      (linked ? '<input type="hidden" name="sourceRecordId" value="' + VZ.esc(appointment.recordId) + '">' : '') +
+      VZ.field(release ? 'Release date' : 'Scheduled checkup date', 'date', '<input class="input" name="date" type="date" min="' + VZ.esc(pet.birth || '') + '" max="' + VZ.today() + '" value="' + date + '"' + (linked ? ' readonly' : '') + '>') +
+      (release ? VZ.field('Person taking the pet home', 'receivedBy', '<input class="input" name="receivedBy" maxlength="80" value="' + VZ.esc(owner.name) + '">') : '') +
+      VZ.field(release ? 'Home-care notes (optional)' : 'Notes (optional)', 'notes', '<textarea class="textarea" name="notes" maxlength="500"></textarea>') +
+      (linked ? VZ.field('Rescheduled checkup date (optional)', 'nextDue', '<input class="input" name="nextDue" type="date" min="' + VZ.today() + '">', 'Leave empty to keep the missed appointment visible as overdue. A confirmed reschedule updates the reminder.') : '') +
+      '<div class="modal-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn">' + (isAdmin ? (release ? 'Confirm release' : 'Record missed checkup') : 'Send for approval') + '</button></div></form>');
+    var form = m.body.querySelector('form'), busy = false;
+    m.body.querySelector('[data-cancel]').addEventListener('click', m.close);
+    form.addEventListener('submit', function (event) {
+      event.preventDefault(); if (busy) return; busy = true;
+      var result = VZ.addPetEvent(pet.id, type, VZ.formData(form));
+      if (!result.ok) { busy = false; VZ.showErrors(form, result.errors || {}); if (result.error) VZ.showFormError(form, result.error); return; }
+      m.close(); VZ.toast(result.pending ? 'Sent to admin for approval.' : (release ? 'Pet release recorded.' : 'Missed checkup recorded.'));
+      render(); VZ.refreshNavBadges();
+    });
+  }
+
   // These controls survive rendering; bind them once to avoid duplicate actions.
+  document.getElementById('release-pet').addEventListener('click', function () { openPetEvent('release'); });
+  document.getElementById('missed-checkup').addEventListener('click', function () { openPetEvent('missed_checkup'); });
   document.getElementById('pet-status').addEventListener('change', function (e) {
     var r = VZ.setPetStatus(pet.id, e.target.value);
     VZ.toast(r.ok ? pet.name + ' is now marked as ' + e.target.value + '.' : (r.error || 'This could not be saved.'), r.ok ? '' : 'error');

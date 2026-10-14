@@ -1,1 +1,1 @@
-Versioned downloads are in the versions folder. This branch contains the complete V10 application at its root, versions/V10_VetZone.zip for the current standalone project, and versions/V9_VetZone.zip for the previous release. Each version also has its own GitHub branch.
+Versioned downloads are in the versions folder. The complete V11 application is at this branch's root. The standalone files are V11_VetZone.zip (current), V10_VetZone.zip, and V9_VetZone.zip. Each release has its own version branch.
