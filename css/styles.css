@@ -553,3 +553,8 @@ body.modal-open { overflow: hidden; }
 
 .profile-card .big img, .pet-pic img { object-fit: contain; }
 .profile-card .big, .pet-pic, .pet-photo-preview, .pet-list-photo { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+
+/* V17: calendar due reminders remain distinct from actual bookings. */
+.calendar-counts { display: flex; flex-direction: column; gap: 2px; }
+.calendar-day .calendar-due { color: var(--action); }
+.calendar-day .calendar-overdue { color: #b32626; }

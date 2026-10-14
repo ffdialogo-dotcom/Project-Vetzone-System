@@ -299,4 +299,22 @@
     return result;
   };
   V.petPhotoHTML = function (pet) { return pet.photo && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(pet.photo) && pet.photo.length <= 200000 ? '<img src="' + V.esc(pet.photo) + '" alt="' + V.esc(pet.name) + '">' : pet.species === 'Cat' ? '🐈' : '🐕'; };
+  V.clinicDueReminders = function () {
+    var reminders = [];
+    V.db.pets.filter(function (pet) { return pet.status !== 'Deceased'; }).forEach(function (pet) {
+      var latest = {};
+      V.petRecords(pet.id).forEach(function (r) {
+        if (r.type !== 'vaccination' && r.type !== 'checkup') return;
+        var key = r.type === 'checkup' ? 'checkup' : 'vaccination:' + r.title.toLowerCase();
+        if (!latest[key]) latest[key] = r;
+      });
+      Object.keys(latest).forEach(function (key) {
+        var source = latest[key], plan = source.type === 'checkup' ? V.checkupAppointment(pet.id) : null, date = plan ? plan.date : source.nextDue;
+        if (!date || !V.validDate(date)) return;
+        if (source.type === 'checkup' && V.db.appointments.some(function (a) { return a.petId === pet.id && a.sourceRecordId === source.id && a.date === date && a.status === 'scheduled'; })) return;
+        reminders.push({ id: 'due:' + source.id, petId: pet.id, sourceRecordId: source.id, type: source.type, date: date, purpose: source.type === 'vaccination' ? source.title + ' · vaccination' : 'Routine checkup', missed: !!(plan && plan.missed), reminder: true });
+      });
+    });
+    return reminders.sort(function (a, b) { return a.date.localeCompare(b.date) || a.petId.localeCompare(b.petId) || a.purpose.localeCompare(b.purpose); });
+  };
 })();

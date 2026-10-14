@@ -38,3 +38,11 @@ Automated syntax checks are NOT substitutes for this manual browser checklist.
 3. Use Pet actions to edit/book/release/mark deceased. Expand Owner & visit details and View details on a history card; verify notes remain readable. Edit/delete controls stay separate from status badges.
 4. Change picture: choose an image and inspect the preview; cancel leaves the old image. Save and reload; check both pet-list views. Remove with cancellation/confirmation. Unsupported, unreadable or over-5-MB images must not overwrite a saved photo. Storage failure must keep the old photo and report failure.
 5. Check desktop and 375px profile/action/photo forms: grouped buttons, readable expandable details, correctly sized photos and no document horizontal overflow.
+
+
+## V17 calendar due-date connection
+
+1. Find a pet with an overdue vaccine or a saved next checkup. Open Clinic and navigate to that date's month; the day shows a due count. Select it and open the correct pet profile from its reminder row.
+2. Record an actual new vaccination as staff: the old due date stays until approval. Approve as admin: the calendar uses the new dose's next due date, preserving previous dose history.
+3. Submit and approve a missed-checkup reschedule; profile and calendar reminder agree. A linked booked checkup appears once as a booking. Cancelling it restores the clinical reminder; future attendance is still blocked. Deceased pets show no reminders.
+4. Confirm reminders do not create booked appointments or completed visits. Check separate due/booked counts, far-future months, pagination and 375px layout.

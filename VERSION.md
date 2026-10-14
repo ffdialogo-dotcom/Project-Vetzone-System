@@ -1,5 +1,5 @@
-# V16
+# V17
 
-V16 adds explicit confinement separate from ordinary clinic visits, clear profile/list/board status, changeable pet photos, and less crowded pet-profile controls and expandable details. Existing styling and prior care workflows are retained. Photos and confinement persist in this browser.
+V17 connects approved pet vaccination/checkup due dates to the Clinic calendar automatically. Due/overdue reminders are distinct from actual booked appointments, link back to the correct pet profile, and update with approved medical history and checkup reschedules.
 
-Download versions/V16_VetZone.zip using GitHub Download raw file. V9–V15 files and branches remain available. The complete app is at the repository root.
+Download versions/V17_VetZone.zip using GitHub Download raw file. V9–V16 files and branches remain available. The complete app is at the repository root.

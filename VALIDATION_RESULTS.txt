@@ -1,3 +1,23 @@
+V17 verification (October 14, 2026)
+
+PASS: check-project.js, check-v13-workflows.js,
+check-missed-vaccination.js, check-release-attendance.js,
+check-pet-profile-v16.js, check-clinic-due.js,
+check-v13-browser.js, check-clinic-due-browser.js.
+
+Verified latest approved clinical due dates, case-insensitive vaccine grouping,
+no writes/automatic bookings when reading reminders, pending then approved
+vaccine updates, approved checkup no-show reschedules, linked-booking
+suppression, cancellation/attendance and deceased suppression, reload.
+Browser: calendar due counts, overdue row and correct pet link, no fake
+appointment controls on due rows, staff approval before date changes,
+new future due date and persistence, existing actual booking workflows.
+Desktop and 375px mobile screenshots inspected; palette/layout retained;
+no horizontal document overflow or uncaught browser errors.
+git diff --check passed. No backend added.
+
+Earlier verification retained below:
+
 V16 verification (October 14, 2026)
 
 PASS: twelve data/static suites: check-project.js, check-archive.js,

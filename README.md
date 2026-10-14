@@ -1,6 +1,14 @@
-# V16 — VetZone VetCare System: Working Prototype
+# V17 — VetZone VetCare System: Working Prototype
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
+
+## Clinic calendar connected to pet due dates (V17)
+
+The Clinic calendar now automatically displays vaccination and checkup due dates from the latest approved pet records. Days show separate **due** and **booked** counts. Select a marked day to see the pet/owner, vaccine or checkup and Due reminder / Overdue reminder, then **Open pet record** to act on that patient.
+
+A clinical due date is a reminder, not a confirmed booking. Viewing the calendar creates no appointments or medical records. Staff pending/rejected entries do not change due dates; after approval, a new actual vaccination replaces its earlier due date. Approved missed-checkup reschedules move the reminder using the same plan shown on the profile. A linked scheduled checkup is represented by its booking instead of a duplicate reminder; cancellation restores the clinical reminder, and completed attendance follows the existing checkup-plan behavior. Deceased pets have no due reminders.
+
+Far-future due dates are visible when navigating to their month, even outside the dashboard's short reminder window. Existing booking, attendance, confinement and release controls are retained.
 
 ## Pet profile, confinement and photos (V16)
 
