@@ -1,5 +1,8 @@
-# V9
+# V10
 
-V9 contains direct admin deceased confirmation, staff deceased approval requests, sale confirmation and cash change, ADM/STF role IDs, inventory item codes, and chart sale details.
+Changes from V9:
 
-The standalone file is versions/V9_VetZone.zip. This branch preserves V9. Future updates use separate version branches and ZIP names.
+- Removed the duplicate Grooming option from the inventory category dropdown.
+- Sales chart detail panels open above the selected dot and remain within the visible viewport. Longer panels scroll within the available space.
+
+The current standalone file is versions/V10_VetZone.zip. versions/V9_VetZone.zip preserves the prior release. The complete current application is at the repository root; extract the project and open index.html.

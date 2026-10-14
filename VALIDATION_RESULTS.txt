@@ -1,3 +1,11 @@
+V10 verification (October 14, 2026)
+
+PASS: tests/check-project.js — JavaScript parsing, local asset links and core sale checks.
+PASS: tests/check-workflows-browser.js — existing admin, sales, ID, item-code and chart workflows remain functional.
+PASS: targeted Chromium checks — one Grooming category option, working category filter, and upward chart details entirely inside 1280x720, 1024x600 and 375x667 viewports. Long details scroll inside their panel. No uncaught browser errors.
+
+Earlier V9 verification is retained below:
+
 Validation of the updated VetZone workflows (October 14, 2026)
 
 PASS: tests/check-project.js

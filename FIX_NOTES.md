@@ -1,3 +1,5 @@
+V10 fixes the duplicate Grooming dropdown entry and positions sales-detail panels above chart dots within the visible screen. Previous V9 fixes and workflows are retained.
+
 # Changes and validation
 
 The current update implements the requested workflow changes:
@@ -30,4 +32,4 @@ node tests/check-workflows-browser.js
 
 Browser checks require Playwright and Chromium in the testing environment. They start/stop their own local HTTP server and use fresh browser profiles. They use /usr/bin/chromium when available, or Playwright's installed Chromium otherwise. CHROMIUM_EXECUTABLE_PATH can select another Chromium executable. These tools are not needed to use the application.
 
-All eight checks passed. Migration was also tested against data produced by the actual preceding release, preserving existing records. See VALIDATION_RESULTS.txt for exact scope. Full manual regression and production security are not claimed.
+The V9 baseline passed all eight checks. V10 verification is recorded in VALIDATION_RESULTS.txt. Migration was also tested against data produced by the actual preceding release, preserving existing records. See VALIDATION_RESULTS.txt for exact scope. Full manual regression and production security are not claimed.

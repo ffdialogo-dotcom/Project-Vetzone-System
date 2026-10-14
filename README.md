@@ -1,4 +1,4 @@
-# VetZone VetCare System: Working Prototype
+# V10 — VetZone VetCare System: Working Prototype
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
 

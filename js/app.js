@@ -1549,9 +1549,14 @@
       var p = pts[index];
       tooltip.querySelector('.chart-tooltip-content').textContent = p.tip + (p.details && p.details.length ? '\n\n' + p.details.join('\n\n') : '\nNo sales recorded for this date.');
       tooltip.hidden = false;
-      var host = el.getBoundingClientRect(), dot = point.getBoundingClientRect();
-      tooltip.style.left = Math.max(0, Math.min(dot.left - host.left - tooltip.offsetWidth / 2, el.clientWidth - tooltip.offsetWidth)) + 'px';
-      tooltip.style.top = (dot.bottom - host.top + 8) + 'px';
+      var dot = point.getBoundingClientRect(), margin = 8;
+      var viewportWidth = document.documentElement.clientWidth, viewportHeight = window.innerHeight;
+      // Prefer the space above the dot; keep long details scrollable inside the viewport.
+      var above = dot.top - margin * 2;
+      tooltip.style.maxWidth = Math.max(0, viewportWidth - margin * 2) + 'px';
+      tooltip.style.maxHeight = Math.max(0, Math.min(320, above >= 80 ? above : viewportHeight - margin * 2)) + 'px';
+      tooltip.style.left = Math.max(margin, Math.min(dot.left + dot.width / 2 - tooltip.offsetWidth / 2, viewportWidth - tooltip.offsetWidth - margin)) + 'px';
+      tooltip.style.top = Math.max(margin, Math.min(dot.top - tooltip.offsetHeight - margin, viewportHeight - tooltip.offsetHeight - margin)) + 'px';
     }
     el.querySelectorAll('[data-chart-point]').forEach(function (point) {
       var index = Number(point.getAttribute('data-chart-point'));
