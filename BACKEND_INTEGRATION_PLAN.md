@@ -26,3 +26,16 @@ The current prototype uses browser-side storage and client-side role checks. Do 
 
 ## Production readiness
 Require backups and restore drills, TLS, secret management, least-privilege DB account, monitoring, audit retention, access review, privacy compliance, and real multiuser/concurrency tests.
+
+
+## V13 frontend contracts to preserve
+
+V13 adds browser collections `workflowRequests`, `services`, `appointments`, `clinicStays`, `receivings`, and `stockLosses`. Keep their visible workflows when replacing localStorage with server APIs.
+
+- Approved full reversals retain original sale lines and original product-batch allocations. Lock the sale/request and affected batches together; prevent duplicate decisions. Only explicit verified returns restore active, unexpired original batches. Never automatically return service units or unverifiable historical sales. Store refund method, amount, review date and reviewer separately. Net sales exclude reversed records; the refund column is informational by review date, without a second deduction.
+- Validate an entire supplier receipt before writing any line, enforce unique normalized supplier/reference, and commit the receipt and all its batches atomically. Persist purchase unit costs and lot references. Preserve unknown legacy costs. Batch losses lock available quantities, require approval for staff, and retain cost snapshots.
+- Pet edits keep internal IDs/history. Approvals compare the original pet/owner snapshot before applying; shared owner updates affect linked pets. Use server revision numbers for concurrency.
+- Calendar bookings retain rescheduled originals. Completed attendance cannot precede the appointment time. Pending missed attendance prevents conflicting actions; approval/rejection updates its calendar entry. Profile checkup reschedules and calendar entries must remain synchronized. Enforce clinic timezone on the server.
+- Physical stays remain separate from clinical treatment. Check-in/attendance creates no clinical examination. Staff release approval closes only the applicable stay, never a later admission. Deceased status closes active stays and cancels scheduled appointments.
+
+All permissions and stale/duplicate checks must execute on the server, using authenticated roles and database transactions. Frontend checks are currently prototype behavior.

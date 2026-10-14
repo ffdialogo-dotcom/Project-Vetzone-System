@@ -1,6 +1,19 @@
-# V12 — VetZone VetCare System: Working Prototype
+# V13 — VetZone VetCare System: Working Prototype
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
+
+## New frontend workflows (V13)
+
+The existing colors, typography and page layout are retained. New functions use tabs and focused dialogs; lists show eight rows per page.
+
+- **Record sales > History:** view the original sale and request a full reversal. Staff requests require admin approval under **Approvals > Other requests**. Admins proceed directly to the review confirmation. Confirm the refund method and that the full refund was recorded. Return quantities default to zero; only physically returned, unopened, unexpired, correctly stored products can be explicitly restored to verified original batches. Services and older sales without batch tracing cannot restore stock. Reversed sales remain in history and are excluded from net sales; refunds are shown separately by decision date, without subtracting twice. This records a refund; it does not transfer money.
+- **Record sales > Services:** bill clinic services alongside products with the existing cash/change and final confirmation flow. Service billing does not deduct inventory. Admins edit sample prices in **Service prices**. Top sellers continues to rank products.
+- **Clinic > Appointments:** book, reschedule, cancel, and record attended or missed appointments. Rescheduling preserves the original entry. Future appointments cannot be marked attended/missed. Staff missed entries wait for medical-history approval. Attendance checks the pet into the clinic but does not invent an examination or increase medical visit counts. Linked checkup plans and calendar attendance stay synchronized; approved profile reschedules create a new appointment at the original time.
+- **Clinic > In clinic / Released:** check pets in, show their physical location separately from treatment, mark ready for pickup (admin), and hand the pet home using the existing release workflow. Staff releases require approval; admins release directly. Deceased pets leave the active board and their future appointments are cancelled.
+- **Pet profile > More actions:** edit pet and owner details (staff approval/admin direct), book an appointment, or check in. Internal IDs and medical history remain unchanged. Shared owner changes apply to their linked pets. A changed original record blocks stale approvals.
+- **Inventory > Receiving:** receive multiple supplier lines with a delivery reference, lot, expiry, quantity and purchase cost. All lines validate before any stock is added; duplicate deliveries are blocked. Staff submissions wait for admin approval. **Costs & losses** (admin) shows recorded purchases, loss costs and remaining expired stock costs. Damaged, expired or missing stock can be recorded against a specific batch. Older batches without unit costs remain marked unknown.
+
+These workflows still use this browser's localStorage. Server permissions, shared storage and transactions will be implemented with the backend.
 
 ## Expired stock archiving (V12)
 
@@ -80,7 +93,7 @@ Data lives in this browser (localStorage), and there is no server or database ye
 Sign in with a **Create account** button (and a **Log in** button on the Create account page); admin approval of account requests; Profile (details, picture, password); Top sellers; Record sales (stock is deducted automatically); Inventory with batches, expiry dates, and alerts; Pet records with visit history; Income report (admin).
 
 ## Reset before a demo
-Staff accounts page, "Reset demo data". If you used an earlier version in the same browser, reset once so the new sample data (including waiting submissions) appears.
+Staff accounts page, "Reset demo data". Existing browser data migrates automatically. Reset only if you intentionally want to replace it with fresh demo data.
 
 ## Suggested 3-minute demo
 1. Log in as staff (`staff1`). Open Inventory, choose **+ Stock** on Syringe 3mL, and send it. It shows under "Proposed changes" and the stock does not change.
@@ -93,13 +106,13 @@ Staff accounts page, "Reset demo data". If you used an earlier version in the sa
 `index.html` (sign in), one `.html` per page, `css/styles.css`, `img/` (logo and favicon), and `js/`. `js/app.js` holds the data, the permission rules, and the shared layout. Its data and permission logic will be moved into Express services and PostgreSQL transactions.
 
 ## Not built yet
-A real backend and database, editing pet details, voiding a sale, a forgot-password flow (the admin resets passwords), and offline syncing.
+A real backend and database, a forgot-password flow (the admin resets passwords), and offline syncing.
 
 ## Cleanup and production notes (October 2026)
 - The existing green/pink prototype styling, official logo assets, and functional page structure are retained. The client-approved screenshot remains the reference for any later visual changes.
 - Sales are **internal records**, not receipt-issuing POS transactions. Recorded revenue is not profit. Payment method entered by staff is not independent evidence of payment.
 - The prototype still uses browser storage and demo passwords; do not use it with actual clinic records or deploy it as production authentication.
-- The current sale-recording flow has **no void/reversal workflow**, so do not attempt to correct completed sales by deleting browser records. Implement approved voids and audited stock reconciliation in the backend.
-- Bulk supplier receiving in a single delivery form, secure admin-only backup status, production audit logs, and clinic-network restrictions are **future features**. Existing inventory stock-in works item by item.
+- V13 adds approved full-sale reversals with audited, explicit stock reconciliation. Production enforcement still needs backend transactions.
+- V13 adds bulk supplier receiving, purchase costs and stock-loss reporting. Secure backup status, production audit logs and clinic-network restrictions remain future backend features.
 - The `js/app.js` SVG icon set is embedded locally and needs no external icon CDN. Other Lucide-compatible icons can be added later to match the approved design.
 - Run `node tests/check-project.js` to verify JavaScript syntax, local asset links, and basic business-logic checks. Browser interaction testing is still required.

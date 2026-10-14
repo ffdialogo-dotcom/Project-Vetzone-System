@@ -19,3 +19,13 @@ Use separate admin and staff demo accounts. Test in a fresh browser profile and 
 - [ ] Browser console errors; keyboard use; mobile layout
 
 Automated syntax checks are NOT substitutes for this manual browser checklist.
+
+
+## V13 focused workflow review
+
+1. Staff: bill a product and a service; review then confirm payment. Check only product stock decreases. Open History, view the sale, request reversal. Admin: Other requests, confirm a refund; leave returned quantities zero for used/damaged products. Verify original sale remains Reversed, net sales exclude it and stock does not increase. For an actual usable return with verified batches, explicitly enter the quantity and confirm usable.
+2. Inventory > Receiving: add supplier/reference and multiple valid product lines, costs, lots and expiries. Invalid last line must leave all stock unchanged. Staff receipt waits for admin; approval applies once. Costs & losses shows purchase costs and specific batch-loss costs. Historical unknown costs stay unknown.
+3. Pet > More actions: staff submits details, admin reviews; verify same ID, clinical status and history. Shared owner contact changes affect all their pets.
+4. Clinic: book an appointment, reschedule and verify original history. Mark only past/due appointments attended or missed. Staff missed entries require approval; reject then retry. Verify the pet-profile checkup reminder and calendar agree after an approved linked reschedule.
+5. In clinic: check in, admin marks ready for pickup; staff requests release, admin approves. Verify clinic board closes the stay while medical treatment status/history remains. Deceased pets close their stays and cancel scheduled appointments.
+6. Verify new tabs/dialogs at desktop and 375px widths, table scrolling/pagination and reload persistence.

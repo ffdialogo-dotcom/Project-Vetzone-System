@@ -297,5 +297,38 @@
     m.body.querySelector('[data-cancel]').addEventListener('click', m.close);
   }
 
+  var section = 'stock', sectionPage = 1, secondary = document.getElementById('stock-secondary-panel');
+  document.getElementById('costs-tab').hidden = !VZ.can('income.view');
+  function renderSection() {
+    document.querySelectorAll('[data-stock-section]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.stockSection === section)); });
+    document.getElementById('stock-main-panel').hidden = section !== 'stock'; secondary.hidden = section === 'stock';
+    if (section === 'receiving') {
+      var me = VZ.currentUser(), rows = VZ.db.receivings.filter(function (r) { return me.role === 'admin' || r.by === me.username || r.submittedBy === me.username; }).map(function (r) { return { date: r.date, supplier: r.supplier, reference: r.reference, cost: r.totalCost, status: 'Received', id: r.id }; });
+      VZ.workflowRequests().filter(function (r) { return r.kind === 'receiving' && r.status !== 'approved'; }).forEach(function (r) { rows.push({ date: r.payload.date, supplier: r.payload.supplier, reference: r.payload.reference, cost: r.payload.lines.reduce(function (n, l) { return n + Number(l.qty) * Number(l.unitCost); }, 0), status: r.status === 'pending' ? 'Pending review' : 'Rejected', request: r.id }); });
+      rows.sort(function (a, b) { return b.date.localeCompare(a.date); });
+      secondary.innerHTML = '<div class="card-head"><h2>Supplier receiving</h2><div class="compact-actions"><button type="button" class="btn btn-sm" data-receive>Receive delivery</button><button type="button" class="btn btn-ghost btn-sm" data-loss>Record stock loss</button></div></div>' + VZ.ui.table(rows, ['Received', 'Supplier', 'Reference', 'Purchase cost', 'Status', 'Details'], function (r) { return '<tr><td>' + VZ.fmtDate(r.date) + '</td><td>' + VZ.esc(r.supplier) + '</td><td>' + VZ.esc(r.reference) + '</td><td>' + VZ.money(r.cost) + '</td><td>' + VZ.esc(r.status) + '</td><td><button type="button" class="btn btn-ghost btn-sm" ' + (r.id ? 'data-receipt="' + r.id : 'data-receiving-request="' + r.request) + '">View</button></td></tr>'; }, sectionPage);
+    } else if (section === 'costs') {
+      var summary = VZ.costSummary(); if (!summary) return;
+      secondary.innerHTML = '<div class="card-head"><h2>Costs & losses</h2><button type="button" class="btn btn-ghost btn-sm" data-loss>Record stock loss</button></div><div class="cost-summary"><div><small>Recorded purchases</small><strong>' + VZ.money(summary.purchases) + '</strong></div><div><small>Recorded loss cost</small><strong>' + VZ.money(summary.lossCost) + '</strong></div><div><small>Remaining expired stock cost</small><strong>' + VZ.money(summary.expiredCost) + '</strong></div></div><p class="caption">Cost is unknown for ' + summary.unknownLossUnits + ' lost units and ' + summary.unknownExpiredUnits + ' expired units. Earlier batches without purchase costs are not treated as free stock.</p>' + VZ.ui.table(VZ.db.stockLosses.slice().reverse(), ['Date', 'Item', 'Reason', 'Quantity', 'Cost'], function (l) { return '<tr><td>' + VZ.fmtDate(l.date) + '</td><td>' + VZ.esc(VZ.findProduct(l.productId).name) + '</td><td>' + VZ.esc(l.reason) + '</td><td>' + l.qty + '</td><td>' + (l.cost == null ? 'Unknown' : VZ.money(l.cost)) + '</td></tr>'; }, sectionPage);
+    }
+  }
+  document.querySelectorAll('[data-stock-section]').forEach(function (b) { b.addEventListener('click', function () { section = b.dataset.stockSection; sectionPage = 1; renderSection(); }); });
+  secondary.addEventListener('click', function (event) {
+    var b = event.target.closest('button'); if (!b) return;
+    function changed() { render(); renderSection(); }
+    if (b.dataset.page) { sectionPage = Number(b.dataset.page); renderSection(); }
+    if (b.hasAttribute('data-receive')) VZ.ui.receive(changed);
+    if (b.hasAttribute('data-loss')) VZ.ui.loss(changed);
+    if (b.dataset.receipt) {
+      var r = VZ.db.receivings.filter(function (r) { return r.id === b.dataset.receipt; })[0];
+      VZ.modal('Delivery ' + r.reference, '<p>' + VZ.esc(r.supplier) + ' · ' + VZ.fmtDate(r.date) + '</p><ul class="receipt-list">' + r.lines.map(function (l) { return '<li><span>' + l.qty + ' × ' + VZ.esc(l.productName || VZ.findProduct(l.productId).name) + ' · ' + VZ.esc(l.lot) + '</span><span>' + VZ.money(l.qty * l.unitCost) + '</span></li>'; }).join('') + '</ul><p><b>Purchase cost: ' + VZ.money(r.totalCost) + '</b></p>');
+    }
+    if (b.dataset.receivingRequest) {
+      var rq = VZ.workflowRequests().filter(function (r) { return r.id === b.dataset.receivingRequest; })[0];
+      if (VZ.can('inventory.review') && rq.status === 'pending') VZ.ui.reviewRequest(rq, changed); else VZ.modal('Delivery submission', '<p>' + VZ.esc(rq.summary) + '</p><p>Status: ' + VZ.esc(rq.status) + '</p><p>' + VZ.esc(rq.note) + '</p>');
+    }
+  });
+  renderSection();
+
   render();
 })();

@@ -14,9 +14,11 @@
 <section class="card"><div class="report-head"><div class="tabs" role="tablist" aria-label="Report period"><button type="button" role="tab" data-mode="daily" aria-selected="true">Daily</button><button type="button" role="tab" data-mode="weekly" aria-selected="false">Weekly</button><button type="button" role="tab" data-mode="monthly" aria-selected="false">Monthly</button></div>
 <button type="button" class="btn btn-ghost no-print" id="print"><span data-icon="print" class="vz-icon-placeholder"></span> Print report</button></div>
 <p class="caption" id="income-description"></p>
-<div class="table-wrap" style="margin-top:12px"><table class="table"><caption class="sr-only" id="income-table-caption">Daily income report</caption><thead><tr><th scope="col">Period</th><th scope="col" class="num">Sales</th><th scope="col" class="num">Items sold</th><th scope="col" class="num">Gross sales</th><th scope="col" class="num">Discounts</th><th scope="col" class="num">Net income</th><th scope="col" class="num">Cash</th><th scope="col" class="num">Online</th></tr></thead><tbody id="income-rows"></tbody><tfoot id="income-total"></tfoot></table></div></section></main></div>
+<div class="table-wrap" style="margin-top:12px"><table class="table"><caption class="sr-only" id="income-table-caption">Daily income report</caption><thead><tr><th scope="col">Period</th><th scope="col" class="num">Sales</th><th scope="col" class="num">Units billed</th><th scope="col" class="num">Gross sales</th><th scope="col" class="num">Discounts</th><th scope="col" class="num">Net sales</th><th scope="col" class="num">Cash</th><th scope="col" class="num">Online</th><th scope="col" class="num">Refunds recorded</th></tr></thead><tbody id="income-rows"></tbody><tfoot id="income-total"></tfoot></table></div></section></main></div>
 <noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
 <script src="js/app.js"></script>
+<script src="js/workflow-data.js"></script>
+<script src="js/workflow-ui.js"></script>
 <script src="js/income.js"></script>
 </body>
 </html>

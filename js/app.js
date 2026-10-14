@@ -342,6 +342,12 @@
     db.requests = db.requests || [];
     db.audit = db.audit || [];
     db.petStatusRequests = db.petStatusRequests || [];
+    ['workflowRequests', 'appointments', 'clinicStays', 'receivings', 'stockLosses'].forEach(function (key) { db[key] = db[key] || []; });
+    db.services = db.services || [
+      { id: 'svc_consult', displayId: 'SVC-0001', name: 'Consultation', price: 300, active: true },
+      { id: 'svc_vaccination', displayId: 'SVC-0002', name: 'Vaccination service', price: 250, active: true },
+      { id: 'svc_grooming', displayId: 'SVC-0003', name: 'Grooming service', price: 350, active: true }
+    ];
     // Keep internal IDs unchanged and give each role its own display-ID sequence.
     db.seq = db.seq || { sale: 0 };
     db.seq.display = db.seq.display || {};
@@ -463,6 +469,7 @@
   VZ.products = function (includeArchived) {
     return VZ.db.products.filter(function (p) { return includeArchived || !p.archived; });
   };
+  VZ.findBillable = function (id) { var p = VZ.findProduct(id); if (p) return p; var service = VZ.db.services.filter(function (x) { return x.id === id; })[0]; return service ? Object.assign({}, service, { isService: true, category: 'Services', emoji: '🩺', archived: !service.active }) : null; };
   VZ.findProduct = function (id) { return VZ.db.products.filter(function (p) { return p.id === id; })[0]; };
 
   // Stock status is always calculated from the batches, never typed in by hand.
@@ -509,13 +516,14 @@
     if (!b.expiry) return -1;
     return a.expiry < b.expiry ? -1 : 1;
   }
-  function deduct(productId, qty) {
+  function deduct(productId, qty, allocations) {
     var today = VZ.today();
     var bs = VZ.db.batches.filter(function (b) { return b.productId === productId && !b.archived && b.qty > 0 && (!b.expiry || b.expiry >= today); });
     bs.sort(earliestFirst);
     var need = qty;
     for (var i = 0; i < bs.length && need > 0; i++) {
       var take = Math.min(bs[i].qty, need);
+      if (allocations) allocations.push({ batchId: bs[i].id, qty: take, expiry: bs[i].expiry, unitCost: bs[i].unitCost == null ? null : bs[i].unitCost });
       bs[i].qty -= take;
       need -= take;
     }
@@ -793,13 +801,13 @@
     items.forEach(function (it) { merged[it.productId] = (merged[it.productId] || 0) + Number(it.qty); });
     for (k in merged) {
       if (!Object.prototype.hasOwnProperty.call(merged, k)) continue;
-      var p = VZ.findProduct(k);
+      var p = VZ.findBillable(k);
       if (!p || p.archived) return { ok: false, error: 'One of the items is no longer available.' };
       var q = merged[k];
       if (!(q >= 1) || q !== Math.floor(q)) return { ok: false, error: 'Quantities must be whole numbers of 1 or more.' };
-      var left = VZ.info(p).sellable;
-      if (q > left) return { ok: false, error: 'Not enough stock for ' + p.name + ' (' + left + ' left).' };
-      lines.push({ productId: p.id, name: p.name, price: p.price, qty: q });
+      var left = p.isService ? 1000 : VZ.info(p).sellable;
+      if (q > left) return { ok: false, error: p.isService ? 'Service quantity must not exceed 1000.' : 'Not enough stock for ' + p.name + ' (' + left + ' left).' };
+      lines.push({ productId: p.id, name: p.name, price: p.price, qty: q, kind: p.isService ? 'service' : 'product' });
     }
     var t = VZ.cartTotals(lines, disc);
     return { ok: true, lines: lines, totals: t, discountPct: disc, method: method };
@@ -822,7 +830,7 @@
     if (payment.expectedTotal != null && payment.expectedTotal !== t.total) return { ok: false, error: 'The order total changed. Go back and review the sale again.' };
     var cash = method === 'Cash' ? VZ.cashPayment(t.total, payment.cashReceived) : { ok: true, cashReceived: null, change: null };
     if (!cash.ok) return cash;
-    lines.forEach(function (l) { deduct(l.productId, l.qty); });
+    lines.forEach(function (l) { l.allocations = []; if (l.kind !== 'service') deduct(l.productId, l.qty, l.allocations); });
     VZ.db.seq.sale++;
     var sale = {
       id: 's' + VZ.db.seq.sale, no: 'S-' + pad4(VZ.db.seq.sale), ts: VZ.nowStr(), items: lines,
@@ -836,9 +844,10 @@
     return { ok: true, sale: sale };
   };
   VZ.salesBetween = function (from, to) {
-    return VZ.db.sales.filter(function (s) { var d = s.ts.slice(0, 10); return d >= from && d <= to; });
+    return VZ.db.sales.filter(function (s) { var d = s.ts.slice(0, 10); return s.status !== 'voided' && d >= from && d <= to; });
   };
   VZ.aggregate = function (sales) {
+    sales = sales.filter(function (s) { return s.status !== 'voided'; });
     var r = { n: sales.length, items: 0, gross: 0, discount: 0, net: 0, cash: 0, online: 0 };
     sales.forEach(function (s) {
       s.items.forEach(function (l) { r.items += l.qty; });
@@ -854,7 +863,7 @@
     var map = {};
     VZ.salesBetween(from, to).forEach(function (s) {
       var keep = 1 - (Number(s.discountPct) || 0) / 100;
-      s.items.forEach(function (l) {
+      s.items.filter(function (l) { return l.kind !== 'service'; }).forEach(function (l) {
         var m = map[l.productId] || (map[l.productId] = { productId: l.productId, name: l.name, qty: 0, total: 0 });
         m.qty += l.qty;
         m.total += l.price * l.qty * keep;
@@ -905,7 +914,8 @@
       if (r.date !== date) return;
       if (r.nextDue) { date = r.nextDue; missed = false; } else missed = true;
     });
-    return { recordId: source.id, date: date, missed: missed };
+    var calendar = VZ.calendarCheckup ? VZ.calendarCheckup(petId, source.id) : null;
+    return calendar || { recordId: source.id, date: date, missed: missed };
   };
   // Due dates come from the latest approved record of each vaccine or checkup, so a new one replaces the old due date.
   VZ.petState = function (pet) {
@@ -998,6 +1008,7 @@
       r.reviewedAt = r.at;
       pet.status = 'Deceased';
       pet.deceased = { date: date, location: location, notes: notes, approvedBy: me.username, approvedAt: r.at };
+      if (VZ.closeClinicForDeath) VZ.closeClinicForDeath(pet.id);
     }
     VZ.db.petStatusRequests.push(r);
     VZ.log('pet', direct ? 'Marked ' + pet.name + ' as deceased' : 'Requested deceased status for ' + pet.name + ' (pending admin approval)', me);
@@ -1020,6 +1031,7 @@
     }
     r.status = decision === 'approve' ? 'approved' : 'rejected'; r.reviewedBy = me.username; r.reviewedAt = VZ.nowStr(); r.note = note;
     if (decision === 'approve') { pet.status = 'Deceased'; pet.deceased = { date: r.date, location: r.location, notes: r.notes, approvedBy: me.username, approvedAt: r.reviewedAt }; }
+    if (decision === 'approve' && VZ.closeClinicForDeath) VZ.closeClinicForDeath(pet.id);
     VZ.log('pet', 'Death status request ' + r.status + ' for ' + pet.name, me);
     VZ.audit('pet.deceased.' + r.status, pet.name, 'Request ' + r.id, me);
     VZ.save(); return { ok: true };
@@ -1037,7 +1049,7 @@
     var errors = {}, clean = {
       date: String(details.date || ''), notes: String(details.notes || '').trim(),
       receivedBy: String(details.receivedBy || '').trim(), nextDue: String(details.nextDue || ''),
-      sourceRecordId: details.sourceRecordId || null
+      sourceRecordId: details.sourceRecordId || null, appointmentId: details.appointmentId || null
     };
     if (!pet || pet.status === 'Deceased') return { errors: { date: 'This action is not available for a deceased or missing pet.' }, clean: clean };
     if (type !== 'release' && type !== 'missed_checkup') errors.type = 'Choose release or missed checkup.';
@@ -1046,9 +1058,13 @@
     if (clean.notes.length > 500) errors.notes = 'Keep notes within 500 characters.';
     if (type === 'release') {
       if (!clean.receivedBy || clean.receivedBy.length > 80) errors.receivedBy = 'Enter the name of the person taking the pet home (up to 80 characters).';
-      clean.sourceRecordId = null; clean.nextDue = '';
+      clean.sourceRecordId = null; clean.nextDue = ''; clean.appointmentId = null;
+      var stay = VZ.activeStay ? VZ.activeStay(pet.id) : null;
+      if (stay && (clean.date < stay.admittedAt.slice(0, 10) || (details.ts && details.ts < stay.admittedAt))) errors.date = 'The pet was checked in after this release date or request. Submit a new release.';
     } else {
       var appointment = VZ.checkupAppointment(pet.id);
+      if (!clean.appointmentId && clean.sourceRecordId && appointment && appointment.recordId === clean.sourceRecordId && appointment.date === clean.date) clean.appointmentId = appointment.appointmentId || null;
+      if (clean.appointmentId && VZ.validateAppointmentEvent) { var attendanceError = VZ.validateAppointmentEvent(pet.id, clean, ignoreId); if (attendanceError) errors.date = attendanceError; }
       if (clean.sourceRecordId && (!appointment || appointment.recordId !== clean.sourceRecordId || appointment.date !== clean.date || appointment.missed)) {
         errors.date = 'This checkup schedule has changed or was already marked missed. Refresh the pet profile.';
       }
@@ -1061,7 +1077,7 @@
     var duplicate = VZ.db.records.some(function (r) {
       if (r.id === ignoreId || r.petId !== pet.id || r.type !== type || r.status === 'rejected') return false;
       if (type === 'release' && r.status === 'pending') return true;
-      return r.date === clean.date && (type === 'release' ? String(r.receivedBy || '').toLowerCase() === clean.receivedBy.toLowerCase() && (r.notes || '') === clean.notes : true);
+      return r.date === clean.date && (type === 'release' ? String(r.receivedBy || '').toLowerCase() === clean.receivedBy.toLowerCase() && (r.notes || '') === clean.notes : (clean.appointmentId || r.appointmentId ? clean.appointmentId === r.appointmentId : true));
     });
     if (duplicate) errors.date = 'This event is already recorded or waiting for approval.';
     return { errors: errors, clean: clean };
@@ -1072,9 +1088,11 @@
     if (Object.keys(validated.errors).length) return { ok: false, errors: validated.errors };
     var c = validated.clean, st = statusFor(me);
     var rec = { id: VZ.uid('r'), petId: petId, type: type, date: c.date, title: type === 'release' ? 'Released home' : 'Owner did not attend checkup',
-      notes: c.notes, receivedBy: type === 'release' ? c.receivedBy : '', sourceRecordId: c.sourceRecordId, nextDue: c.nextDue, by: me.username, ts: VZ.nowStr() };
+      notes: c.notes, receivedBy: type === 'release' ? c.receivedBy : '', sourceRecordId: c.sourceRecordId, appointmentId: c.appointmentId, nextDue: c.nextDue, by: me.username, ts: VZ.nowStr() };
     Object.keys(st).forEach(function (key) { rec[key] = st[key]; });
     VZ.db.records.push(rec);
+    if (!st.status || st.status === 'approved') { if (VZ.syncCareEvent) VZ.syncCareEvent(rec); }
+    else if (VZ.markCareEventPending) VZ.markCareEventPending(rec);
     VZ.audit(st.status === 'pending' ? 'medical.submit' : 'medical.direct', recordLabel(rec), type === 'release' ? 'Pet release to ' + c.receivedBy : 'Missed appointment; no clinic visit recorded', me);
     VZ.log('pet', rec.title + ' for ' + pet.name + (st.status === 'pending' ? ' (waiting for approval)' : ''), me);
     VZ.save(); return { ok: true, record: rec, pending: st.status === 'pending' };
@@ -1184,6 +1202,8 @@
     }
     rec.status = decision === 'approve' ? 'approved' : 'rejected';
     rec.reviewedBy = me.username; rec.reviewedAt = VZ.nowStr(); rec.reviewNote = note; rec.auto = false;
+    if (decision === 'approve' && VZ.syncCareEvent) VZ.syncCareEvent(rec);
+    if (decision === 'reject' && VZ.rejectCareEvent) VZ.rejectCareEvent(rec);
     VZ.audit('medical.' + decision, recordLabel(rec), 'Submitted by ' + rec.by + (note ? '. Note: ' + note : ''), me);
     VZ.log('pet', 'Medical entry ' + rec.status + ' for ' + (VZ.findPet(rec.petId) || { name: 'a pet' }).name, me);
     VZ.save();
@@ -1220,7 +1240,7 @@
   };
   VZ.pendingApprovalCount = function () {
     if (!VZ.can('inventory.review')) return 0;
-    return VZ.db.requests.filter(function (r) { return r.status === 'pending'; }).length + VZ.db.records.filter(function (r) { return r.status === 'pending'; }).length + VZ.db.petStatusRequests.filter(function (r) { return r.status === 'pending'; }).length;
+    return VZ.db.requests.filter(function (r) { return r.status === 'pending'; }).length + VZ.db.records.filter(function (r) { return r.status === 'pending'; }).length + VZ.db.petStatusRequests.filter(function (r) { return r.status === 'pending'; }).length + VZ.db.workflowRequests.filter(function (r) { return r.status === 'pending'; }).length;
   };
 
   /* ------------------------------------------------------------ users */
@@ -1676,6 +1696,7 @@
     { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'grid' },
     { id: 'inventory', label: 'Inventory', href: 'inventory.html', icon: 'box' },
     { id: 'sales', label: 'Record sales', href: 'sales.html', icon: 'cart' },
+    { id: 'clinic', label: 'Clinic', href: 'clinic.html', icon: 'calendar' },
     { id: 'pets', label: 'Pet records', href: 'pets.html', icon: 'paw' },
     { id: 'approvals', label: function (u) { return u.role === 'admin' ? 'Approvals' : 'My submissions'; }, href: 'approvals.html', icon: 'check' },
     { id: 'income', label: 'Income report', href: 'income.html', icon: 'chart', roles: ['admin'] },

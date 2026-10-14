@@ -1,3 +1,32 @@
+V13 verification (October 14, 2026)
+
+PASS: nine data/static suites: check-project.js, check-archive.js,
+check-static-pages.js, check-feature-ids-deceased.js,
+check-death-date-validation.js, check-workflows.js,
+check-release-attendance.js, check-expired-stock.js,
+check-v13-workflows.js.
+PASS: five Chromium browser suites: check-pet-browser.js,
+check-workflows-browser.js, check-release-attendance-browser.js,
+check-expired-stock-browser.js, check-v13-browser.js.
+
+V13 checks cover mixed product/service billing; original batch traces;
+staff/admin full reversals; full refund confirmation; default-zero returns;
+unsafe/unverifiable returns, duplicates and permissions; atomic receiving;
+cost metadata and batch losses; controlled pet/owner edits and stale approval;
+appointment booking, rescheduling history, attendance and future guards;
+missed attendance approval/rejection and profile/calendar synchronization;
+separate physical stays, pickup, release, deceased closure; reload persistence
+and additive V12 migration preserving existing IDs/history/stock.
+
+Desktop and 375px mobile screenshots inspected for the clinic calendar,
+clinic board and receiving dialog. Existing green/pink styling retained.
+Browser suites report no uncaught page errors. git diff --check passed.
+
+These checks verify browser prototype behavior. Shared data, production
+permissions, payment processing and database transactions await the backend.
+
+Earlier version verification is retained below:
+
 V12 verification (October 14, 2026)
 
 PASS: eight data/static checks: check-project.js, check-archive.js,

@@ -11,6 +11,7 @@
   });
   if (!ctx) return;
   var main = ctx.main;
+  var operationPage = 1;
   var tab = isAdmin ? 'inventory' : 'all';
 
   var STATUS = {
@@ -40,6 +41,7 @@
   }
   function allSubmissions() {
     var list = VZ.inventoryRequests().map(fromRequest);
+    VZ.workflowRequests().forEach(function (r) { list.push({ kind: { receiving: 'Supplier delivery', pet_edit: 'Pet details', reversal: 'Sale reversal', loss: 'Stock loss' }[r.kind], id: r.id, source: 'workflow', at: r.at, by: r.by, summary: r.summary, detail: r.payload.reason || '', status: r.status, reviewedBy: r.reviewedBy, reviewedAt: r.reviewedAt, note: r.note, href: 'approvals.html' }); });
     VZ.petDeathRequests().forEach(function (r) { list.push(fromDeath(r)); });
     var seen = {};
     VZ.recordsByStatus('pending').concat(VZ.reviewedRecords()).forEach(function (r) { if (!seen[r.id]) { seen[r.id] = 1; list.push(fromRecord(r)); } });
@@ -119,11 +121,15 @@
     var inv = VZ.inventoryRequests('pending'), med = VZ.recordsByStatus('pending'), deaths = VZ.petDeathRequests('pending'), accounts = VZ.pendingCount();
     var reviewed = VZ.inventoryRequests().filter(function (r) { return r.status !== 'pending'; }).map(fromRequest).concat(VZ.reviewedRecords().map(fromRecord)).concat(VZ.petDeathRequests().filter(function (r) { return r.status !== 'pending'; }).map(fromDeath))
       .sort(function (a, b) { return a.reviewedAt < b.reviewedAt ? 1 : -1; }).slice(0, 40);
-    var tabs = [['inventory', 'Inventory changes (' + inv.length + ')'], ['medical', 'Medical history (' + med.length + ')'], ['death', 'Deceased requests (' + deaths.length + ')'], ['reviewed', 'Reviewed'], ['audit', 'Audit trail']].map(function (t) {
+    var operations = VZ.workflowRequests().filter(function (r) { return r.status === 'pending'; });
+    reviewed = reviewed.concat(VZ.workflowRequests().filter(function (r) { return r.status !== 'pending'; }).map(function (r) { return { kind: 'Operation', summary: r.summary, status: r.status, by: r.by, reviewedBy: r.reviewedBy, reviewedAt: r.reviewedAt, note: r.note }; })).sort(function (a, b) { return b.reviewedAt.localeCompare(a.reviewedAt); }).slice(0, 40);
+    var tabs = [['operations', 'Other requests (' + operations.length + ')'], ['inventory', 'Inventory changes (' + inv.length + ')'], ['medical', 'Medical history (' + med.length + ')'], ['death', 'Deceased requests (' + deaths.length + ')'], ['reviewed', 'Reviewed'], ['audit', 'Audit trail']].map(function (t) {
       return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="' + (tab === t[0]) + '">' + t[1] + '</button>';
     }).join('');
     var body;
-    if (tab === 'inventory') {
+    if (tab === 'operations') {
+      body = VZ.ui.table(operations, ['Submitted', 'By', 'Request', 'Action'], function (r) { return '<tr><td>' + when(r.at) + '</td><td>' + VZ.esc(VZ.userName(r.by)) + '</td><td>' + VZ.esc(r.summary) + '</td><td><button type="button" class="btn btn-sm" data-review-operation="' + r.id + '">Review</button></td></tr>'; }, operationPage);
+    } else if (tab === 'inventory') {
       body = inv.length ? '<div class="table-wrap"><table class="table" style="min-width:720px"><caption class="sr-only">Inventory changes waiting for review</caption><thead><tr><th scope="col">Submitted</th><th scope="col">Submitted by</th><th scope="col">Item and requested change</th><th scope="col">Reason</th><th scope="col"><span class="sr-only">Review</span></th></tr></thead><tbody>' +
         inv.map(function (r) {
           return '<tr><td class="nowrap">' + when(r.at) + '</td><td>' + VZ.esc(VZ.userName(r.by)) + '</td><td><b>' + VZ.esc(VZ.requestSummary(r)) + '</b><br><small>' + VZ.REQUEST_TYPES[r.type] + '</small></td><td>' + (r.reason ? VZ.esc(r.reason) : '<span class="caption">Not given</span>') + '</td>' +
@@ -156,6 +162,8 @@
     document.getElementById('approvals-tabs').innerHTML = tabs;
     document.getElementById('approvals-body').innerHTML = body;
     main.querySelectorAll('[data-tab]').forEach(function (b) { b.addEventListener('click', function () { tab = b.getAttribute('data-tab'); renderAdmin(); }); });
+    main.querySelectorAll('[data-review-operation]').forEach(function (b) { b.addEventListener('click', function () { var r = VZ.workflowRequests().filter(function (r) { return r.id === b.dataset.reviewOperation; })[0]; VZ.ui.reviewRequest(r, render); }); });
+    main.querySelectorAll('[data-page]').forEach(function (b) { b.addEventListener('click', function () { operationPage = Number(b.dataset.page); render(); }); });
     main.querySelectorAll('[data-review-inv]').forEach(function (b) {
       b.addEventListener('click', function () { var rq = VZ.db.requests.filter(function (r) { return r.id === b.getAttribute('data-review-inv'); })[0]; if (rq) reviewInventory(rq); });
     });

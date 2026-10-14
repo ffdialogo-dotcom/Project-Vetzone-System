@@ -5,7 +5,7 @@
   var ctx = VZ.init('sales', { title: 'Record sales', subtitle: 'Pick items, check the total, and record the payment.', icon: 'cart' });
   if (!ctx) return;
   var user = ctx.user, main = ctx.main;
-  var state = { q: '', cat: 'All', cart: [], method: '', discount: '' };
+  var state = { q: '', cat: 'All', cart: [], catalog: 'products', method: '', discount: '' };
 
   // The page's static layout lives in sales.html. JavaScript handles behavior and data.
   if (!main.children.length) {
@@ -35,7 +35,7 @@
     total: document.getElementById('total'), err: document.getElementById('pay-error'), form: document.getElementById('pay-form') };
 
   function renderCats() {
-    el.cats.innerHTML = ['All'].concat(VZ.CATEGORIES).map(function (c) {
+    el.cats.innerHTML = (state.catalog === 'services' ? ['All'] : ['All'].concat(VZ.CATEGORIES)).map(function (c) {
       return '<button type="button" class="cat-chip" data-cat="' + c + '" aria-pressed="' + (state.cat === c) + '">' + c + '</button>';
     }).join('');
   }
@@ -47,14 +47,14 @@
 
   function renderGrid() {
     var q = state.q.trim().toLowerCase();
-    var list = VZ.products().filter(function (p) {
+    var list = (state.catalog === 'services' ? VZ.db.services.filter(function (s) { return s.active; }).map(function (s) { return VZ.findBillable(s.id); }) : VZ.products()).filter(function (p) {
       return (state.cat === 'All' || p.category === state.cat) && (!q || p.name.toLowerCase().indexOf(q) >= 0 || (p.displayId || '').toLowerCase().indexOf(q) >= 0);
     }).sort(function (a, b) { return a.name.localeCompare(b.name); });
     if (!list.length) { el.grid.innerHTML = '<p class="empty" style="grid-column:1/-1">No items match your search.</p>'; return; }
     el.grid.innerHTML = list.map(function (p) {
-      var i = VZ.info(p), inCart = cartQty(p.id), left = i.sellable - inCart;
+      var i = p.isService ? { sellable: 1000, out: false, low: false } : VZ.info(p), inCart = cartQty(p.id), left = i.sellable - inCart;
       var stockCls = i.out ? 'none' : i.low ? 'low' : '';
-      var stockText = i.out ? 'Out of stock' : (i.low ? 'Low: ' : 'In stock: ') + i.sellable;
+      var stockText = p.isService ? 'Clinic service' : i.out ? 'Out of stock' : (i.low ? 'Low: ' : 'In stock: ') + i.sellable;
       var tag = i.soon ? '<span class="chip chip-amber">Expiring</span>' : '';
       return '<div class="product"><div class="pic" aria-hidden="true">' + tag + p.emoji + '</div><h3>' + VZ.esc(p.name) + '</h3>' +
         '<small class="item-code">Item code: ' + VZ.esc(p.displayId || p.id) + '</small>' +
@@ -66,8 +66,8 @@
 
   function lines() {
     return state.cart.map(function (c) {
-      var p = VZ.findProduct(c.productId);
-      return { productId: c.productId, name: p.name, price: p.price, qty: c.qty, emoji: p.emoji, max: VZ.info(p).sellable };
+      var p = VZ.findBillable(c.productId);
+      return { productId: c.productId, name: p.name, price: p.price, qty: c.qty, emoji: p.emoji, max: p.isService ? 1000 : VZ.info(p).sellable };
     });
   }
 
@@ -105,7 +105,7 @@
   el.grid.addEventListener('click', function (e) {
     var b = e.target.closest('[data-add]');
     if (!b) return;
-    var id = b.getAttribute('data-add'), p = VZ.findProduct(id), left = VZ.info(p).sellable - cartQty(id);
+    var id = b.getAttribute('data-add'), p = VZ.findBillable(id), left = (p.isService ? 1000 : VZ.info(p).sellable) - cartQty(id);
     if (left <= 0) return;
     var l = state.cart.filter(function (x) { return x.productId === id; })[0];
     if (l) l.qty++; else state.cart.push({ productId: id, qty: 1 });
@@ -119,7 +119,7 @@
     var id = btn.getAttribute(inc ? 'data-inc' : dec ? 'data-dec' : 'data-del');
     var l = state.cart.filter(function (x) { return x.productId === id; })[0];
     if (!l) return;
-    if (inc && l.qty < VZ.info(VZ.findProduct(id)).sellable) l.qty++;
+    if (inc && l.qty < (VZ.findBillable(id).isService ? 1000 : VZ.info(VZ.findBillable(id)).sellable)) l.qty++;
     if (dec) l.qty--;
     if (del || l.qty <= 0) state.cart = state.cart.filter(function (x) { return x.productId !== id; });
     refresh();
@@ -183,6 +183,38 @@
       showRecorded(r.sale);
     });
   });
+
+  var view = 'record', historyPage = 1, secondary = document.getElementById('sales-secondary-panel');
+  document.getElementById('service-admin-tab').hidden = !VZ.can('users.manage');
+  function renderView() {
+    document.querySelectorAll('[data-sales-tab]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.salesTab === view)); });
+    document.getElementById('sales-record-panel').hidden = view !== 'record'; secondary.hidden = view === 'record';
+    if (view === 'history') {
+      var sales = VZ.visibleSales();
+      secondary.innerHTML = '<div class="card-head"><h2>Sales history</h2><span class="caption">Original records are retained after reversal.</span></div>' + VZ.ui.table(sales, ['Sale', 'Date', 'Payment', 'Total', 'Status', 'Action'], function (s) {
+        var pending = VZ.db.workflowRequests.some(function (r) { return r.kind === 'reversal' && r.status === 'pending' && r.payload.saleId === s.id; });
+        return '<tr><td><b>' + VZ.esc(s.no) + '</b></td><td>' + VZ.fmtDate(s.ts.slice(0, 10)) + '</td><td>' + VZ.esc(s.method) + '</td><td>' + VZ.money(s.total) + '</td><td><span class="chip ' + (s.status === 'voided' ? 'chip-grey' : pending ? 'chip-amber' : 'chip-green') + '">' + (s.status === 'voided' ? 'Reversed' : pending ? 'Pending review' : 'Recorded') + '</span></td><td><button type="button" class="btn btn-ghost btn-sm" data-sale-view="' + s.id + '">View</button></td></tr>';
+      }, historyPage);
+    } else if (view === 'services') {
+      secondary.innerHTML = '<div class="card-head"><h2>Service prices</h2><button type="button" class="btn btn-sm" data-service-add>Add service</button></div><p class="caption">Sample prices can be edited for your clinic.</p>' + VZ.ui.table(VZ.db.services, ['Code', 'Service', 'Price', 'Status', 'Action'], function (s) { return '<tr><td>' + VZ.esc(s.displayId) + '</td><td>' + VZ.esc(s.name) + '</td><td>' + VZ.money(s.price) + '</td><td>' + (s.active ? 'Available' : 'Unavailable') + '</td><td><button type="button" class="btn btn-ghost btn-sm" data-service-edit="' + s.id + '">Edit</button></td></tr>'; }, historyPage);
+    }
+  }
+  document.querySelectorAll('[data-sales-tab]').forEach(function (b) { b.addEventListener('click', function () { view = b.dataset.salesTab; historyPage = 1; renderView(); }); });
+  document.querySelectorAll('[data-catalog]').forEach(function (b) { b.addEventListener('click', function () { state.catalog = b.dataset.catalog; state.cat = 'All'; document.querySelectorAll('[data-catalog]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); renderCats(); renderGrid(); }); });
+  secondary.addEventListener('click', function (event) {
+    var b = event.target.closest('button'); if (!b) return;
+    if (b.dataset.page) { historyPage = Number(b.dataset.page); renderView(); }
+    if (b.hasAttribute('data-service-add')) VZ.ui.service(null, renderView);
+    if (b.dataset.serviceEdit) VZ.ui.service(VZ.db.services.filter(function (s) { return s.id === b.dataset.serviceEdit; })[0], renderView);
+    if (b.dataset.saleView) {
+      var sale = VZ.db.sales.filter(function (s) { return s.id === b.dataset.saleView; })[0];
+      var pending = VZ.db.workflowRequests.some(function (r) { return r.kind === 'reversal' && r.status === 'pending' && r.payload.saleId === sale.id; });
+      var m = VZ.modal('Sale ' + sale.no, '<ul class="receipt-list">' + sale.items.map(function (l) { return '<li><span>' + l.qty + ' × ' + VZ.esc(l.name) + '</span><span>' + VZ.money(l.price * l.qty) + '</span></li>'; }).join('') + '</ul><p><b>Total: ' + VZ.money(sale.total) + '</b> · ' + VZ.esc(sale.method) + '</p><div class="modal-actions">' + (sale.status !== 'voided' && !pending ? '<button type="button" class="btn btn-danger" data-reverse-sale>Reverse entire sale</button>' : '') + '<button type="button" class="btn" data-close-sale>Close</button></div>');
+      m.body.querySelector('[data-close-sale]').addEventListener('click', m.close);
+      var reverse = m.body.querySelector('[data-reverse-sale]'); if (reverse) reverse.addEventListener('click', function () { m.close(); VZ.ui.reversal(sale, renderView); });
+    }
+  });
+  renderView();
 
   renderCats();
   refresh();

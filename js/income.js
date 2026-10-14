@@ -42,13 +42,13 @@
     }
     var unit = mode === 'daily' ? 'last 14 days' : mode === 'weekly' ? 'last 8 weeks' : 'last 6 months';
     document.getElementById('income-stats').innerHTML = card('stat-green', 'Today', todayA, '') + card('stat-pink', 'This week', weekA, ' since Monday') + card('stat-plain', 'This month', monthA, ' so far');
-    document.getElementById('income-description').textContent = 'Showing the ' + unit + '. Net income is the total after discounts. Online payment only means the customer paid that way.';
+    document.getElementById('income-description').textContent = 'Showing the ' + unit + '. Net sales exclude reversed records. Refunds are shown on the date recorded and are not subtracted twice. Online payment only means the customer paid that way.';
     document.getElementById('income-table-caption').textContent = mode + ' income report';
     main.querySelectorAll('[data-mode]').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-mode') === mode)); });
     document.getElementById('income-rows').innerHTML = rows.map(function (r) {
-      return '<tr><td>' + VZ.esc(r.p.label) + (r.p.now ? ' <span class="tag-now">(' + (mode === 'daily' ? 'today' : mode === 'weekly' ? 'this week' : 'this month') + ')</span>' : '') + '</td><td class="num">' + r.a.n + '</td><td class="num">' + r.a.items + '</td><td class="num">' + VZ.money(r.a.gross) + '</td><td class="num">' + VZ.money(r.a.discount) + '</td><td class="num"><b>' + VZ.money(r.a.net) + '</b></td><td class="num">' + VZ.money(r.a.cash) + '</td><td class="num">' + VZ.money(r.a.online) + '</td></tr>';
+      return '<tr><td>' + VZ.esc(r.p.label) + (r.p.now ? ' <span class="tag-now">(' + (mode === 'daily' ? 'today' : mode === 'weekly' ? 'this week' : 'this month') + ')</span>' : '') + '</td><td class="num">' + r.a.n + '</td><td class="num">' + r.a.items + '</td><td class="num">' + VZ.money(r.a.gross) + '</td><td class="num">' + VZ.money(r.a.discount) + '</td><td class="num"><b>' + VZ.money(r.a.net) + '</b></td><td class="num">' + VZ.money(r.a.cash) + '</td><td class="num">' + VZ.money(r.a.online) + '</td><td class="num">' + VZ.money(VZ.refundsBetween(r.p.from, r.p.to).reduce(function (n, r) { return n + r.amount; }, 0)) + '</td></tr>';
     }).join('');
-    document.getElementById('income-total').innerHTML = '<tr><td>Total</td><td class="num">' + sum.n + '</td><td class="num">' + sum.items + '</td><td class="num">' + VZ.money(sum.gross) + '</td><td class="num">' + VZ.money(sum.discount) + '</td><td class="num">' + VZ.money(sum.net) + '</td><td class="num">' + VZ.money(sum.cash) + '</td><td class="num">' + VZ.money(sum.online) + '</td></tr>';
+    document.getElementById('income-total').innerHTML = '<tr><td>Total</td><td class="num">' + sum.n + '</td><td class="num">' + sum.items + '</td><td class="num">' + VZ.money(sum.gross) + '</td><td class="num">' + VZ.money(sum.discount) + '</td><td class="num">' + VZ.money(sum.net) + '</td><td class="num">' + VZ.money(sum.cash) + '</td><td class="num">' + VZ.money(sum.online) + '</td><td class="num">' + VZ.money(VZ.refundsBetween(ps[ps.length - 1].from, ps[0].to).reduce(function (n, r) { return n + r.amount; }, 0)) + '</td></tr>';
     main.querySelectorAll('[data-mode]').forEach(function (b) {
       b.addEventListener('click', function () { mode = b.getAttribute('data-mode'); render(); });
     });

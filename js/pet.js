@@ -105,6 +105,8 @@
       '<div><dt>Sex</dt><dd>' + sexText(pet.sex) + '</dd></div><div><dt>Age</dt><dd>' + VZ.ageText(pet.birth) + '</dd></div><div><dt>Birth date</dt><dd>' + VZ.fmtDate(pet.birth) + '</dd></div>' +
       '<div><dt>Owner</dt><dd>' + VZ.esc(owner.name) + '</dd></div><div><dt>Owner phone</dt><dd>' + VZ.esc(owner.phone) + '</dd></div>' +
       '<div><dt>Visits recorded</dt><dd>' + VZ.visitCount(pet.id) + '</dd></div><div><dt>Last visit</dt><dd>' + (last ? VZ.fmtDate(last) : 'None yet') + '</dd></div>';
+    var stay = VZ.activeStay(pet.id);
+    document.getElementById('pet-clinic-status').innerHTML = '<span class="chip chip-blue">' + (stay ? (stay.status === 'awaiting_pickup' ? 'Awaiting pickup' : 'In clinic') : pet.status === 'Deceased' ? 'Deceased' : 'No active clinic stay') + '</span>';
     var latestRelease = recs.filter(function (r) { return r.type === 'release'; })[0];
     document.getElementById('pet-release-details').innerHTML = latestRelease ? '<p class="note"><b>Last release home:</b> ' + VZ.fmtDate(latestRelease.date) + '<br>Received by ' + VZ.esc(latestRelease.receivedBy) + '.</p>' : '';
     document.getElementById('release-pet').textContent = isAdmin ? 'Release pet home' : 'Request pet release';
@@ -177,7 +179,7 @@
   function openPetEvent(type) {
     var release = type === 'release', owner = VZ.findOwner(pet.ownerId);
     var appointment = release ? null : VZ.checkupAppointment(pet.id);
-    var linked = !!(appointment && !appointment.missed);
+    var linked = !!(appointment && appointment.date && !appointment.missed);
     var date = linked ? appointment.date : VZ.today();
     var m = VZ.modal(release ? 'Release ' + pet.name + ' home' : 'Record missed checkup for ' + pet.name,
       '<form id="pet-event-form" novalidate><p class="note">' +
@@ -201,6 +203,10 @@
   }
 
   // These controls survive rendering; bind them once to avoid duplicate actions.
+  document.getElementById('pet-more-actions').addEventListener('click', function () {
+    var m = VZ.modal('Pet actions', '<div class="manage-list"><button class="btn btn-ghost btn-block" data-pet-action="edit">Edit pet and owner details</button>' + (pet.status !== 'Deceased' ? '<button class="btn btn-ghost btn-block" data-pet-action="book">Book appointment</button>' + (!VZ.activeStay(pet.id) ? '<button class="btn btn-ghost btn-block" data-pet-action="admit">Check in to clinic</button>' : '') : '') + '</div>');
+    m.body.querySelectorAll('[data-pet-action]').forEach(function (b) { b.addEventListener('click', function () { m.close(); if (b.dataset.petAction === 'edit') VZ.ui.editPet(pet.id, render); else if (b.dataset.petAction === 'book') VZ.ui.bookAppointment(VZ.today(), pet.id, render); else VZ.ui.admit(pet.id, render); }); });
+  });
   document.getElementById('release-pet').addEventListener('click', function () { openPetEvent('release'); });
   document.getElementById('missed-checkup').addEventListener('click', function () { openPetEvent('missed_checkup'); });
   document.getElementById('pet-status').addEventListener('change', function (e) {
@@ -229,4 +235,5 @@
   });
 
   render();
+  if (new URLSearchParams(location.search).get('action') === 'release' && pet.status !== 'Deceased') openPetEvent('release');
 })();

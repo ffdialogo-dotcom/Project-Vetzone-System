@@ -37,7 +37,7 @@
 
   var mini = '<div class="mini"><span>' + VZ.icon('paw', 26) + '</span><small>Pets registered</small><b>' + VZ.db.pets.length + '</b></div>' +
     '<div class="mini"><span>' + VZ.icon('cart', 26) + '</span><small>Sales today</small><b>' + todayAgg.n + '</b></div>' +
-    '<div class="mini"><span>' + VZ.icon('box', 26) + '</span><small>Items sold today</small><b>' + todayAgg.items + '</b></div>' +
+    '<div class="mini"><span>' + VZ.icon('box', 26) + '</span><small>Units billed today</small><b>' + todayAgg.items + '</b></div>' +
     (isAdmin ? '<div class="mini"><span>' + VZ.icon('peso', 26) + '</span><small>Income today</small><b>' + VZ.money(todayAgg.net) + '</b></div>'
       : '<div class="mini"><span>' + VZ.icon('alert', 26) + '</span><small>Stock alerts</small><b>' + VZ.alerts().length + '</b></div>');
 
