@@ -1,6 +1,14 @@
-# V11 — VetZone VetCare System: Working Prototype
+# V12 — VetZone VetCare System: Working Prototype
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
+
+## Expired stock archiving (V12)
+
+In Inventory, open **Manage > Archive expired stock only**. Only expired batches move to Archived; fresh, expiring-today, and non-expiring stock remain available. Archived batches keep their quantity, expiry date and archive history. If no usable stock remains, the product also moves to Archived.
+
+**Archive entire product** remains a separate explicit action for intentionally hiding the whole product. If an older version accidentally archived your entire product, restore it first, then use Archive expired stock only. Restoring a product never makes archived expired batches sellable.
+
+The Archived view displays archived quantities and batch history. A mixed-stock product can appear in both Active (usable units) and Archived (expired units).
 
 ## Pet release and missed checkups (V11)
 

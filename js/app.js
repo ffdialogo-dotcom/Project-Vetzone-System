@@ -448,7 +448,7 @@
   };
   VZ.AUDIT_LABELS = {
     'inventory.submit': 'Inventory change submitted', 'inventory.approve': 'Inventory change approved', 'inventory.reject': 'Inventory change rejected',
-    'inventory.direct': 'Inventory changed by admin', 'inventory.archive': 'Item archived', 'inventory.restore': 'Item restored',
+    'inventory.direct': 'Inventory changed by admin', 'inventory.archive': 'Item archived', 'inventory.archive_expired': 'Expired stock archived', 'inventory.restore': 'Item restored',
     'medical.submit': 'Medical entry submitted', 'medical.approve': 'Medical entry approved', 'medical.reject': 'Medical entry rejected',
     'medical.edit': 'Medical entry edited by admin', 'medical.delete': 'Medical entry deleted', 'medical.direct': 'Medical entry added by admin',
     'account.create': 'Account created', 'account.approve': 'Account approved', 'account.reject': 'Account request rejected',
@@ -469,7 +469,7 @@
   VZ.info = function (p) {
     var today = VZ.today(), sellable = 0, expiredQty = 0, next = null, soon = false;
     VZ.db.batches.forEach(function (b) {
-      if (b.productId !== p.id || b.qty <= 0) return;
+      if (b.productId !== p.id || b.qty <= 0 || b.archived) return;
       if (b.expiry && b.expiry < today) { expiredQty += b.qty; return; }
       sellable += b.qty;
       if (b.expiry) {
@@ -511,7 +511,7 @@
   }
   function deduct(productId, qty) {
     var today = VZ.today();
-    var bs = VZ.db.batches.filter(function (b) { return b.productId === productId && b.qty > 0 && (!b.expiry || b.expiry >= today); });
+    var bs = VZ.db.batches.filter(function (b) { return b.productId === productId && !b.archived && b.qty > 0 && (!b.expiry || b.expiry >= today); });
     bs.sort(earliestFirst);
     var need = qty;
     for (var i = 0; i < bs.length && need > 0; i++) {
@@ -685,12 +685,30 @@
     var p = VZ.findProduct(productId), v = vCorrection(p, d), reason = cleanReason(d.reason, true, v.errors);
     return inventoryChange('correction', p, v, reason, me);
   };
+  VZ.archivedBatches = function (p) {
+    return VZ.db.batches.filter(function (b) { return b.productId === p.id && b.qty > 0 && (b.archived || p.archived); });
+  };
+  VZ.archiveExpiredStock = function (productId) {
+    var me = actor(); if (!me) return needSignIn();
+    if (!VZ.can('inventory.archive')) return denied('Only an admin can archive expired stock.');
+    var p = VZ.findProduct(productId), today = VZ.today();
+    if (!p || p.archived) return { ok: false, error: 'Choose an active product.' };
+    var expired = VZ.db.batches.filter(function (b) { return b.productId === productId && !b.archived && b.qty > 0 && b.expiry && b.expiry < today; });
+    if (!expired.length) return { ok: false, error: 'This product has no expired stock to archive.' };
+    var qty = 0;
+    expired.forEach(function (b) { b.archived = true; b.archivedAt = VZ.nowStr(); b.archivedBy = me.username; qty += b.qty; });
+    if (VZ.info(p).sellable === 0) { p.archived = true; p.archiveReason = 'expired_stock'; }
+    VZ.log('inventory', 'Archived ' + qty + ' expired units of ' + p.name, me);
+    VZ.audit('inventory.archive_expired', p.name, qty + ' expired units in ' + expired.length + ' batch(es); unexpired stock retained', me);
+    VZ.save(); return { ok: true, qty: qty, batches: expired.length };
+  };
   VZ.archiveProduct = function (productId) {
     var me = actor(); if (!me) return needSignIn();
     if (!VZ.can('inventory.archive')) return denied('Only an admin can archive items.');
     var p = VZ.findProduct(productId);
     if (!p || p.archived) return { ok: false, error: 'This item could not be found.' };
     p.archived = true;
+    p.archiveReason = 'whole_product';
     VZ.log('inventory', 'Archived item ' + p.name, me);
     VZ.audit('inventory.archive', p.name, 'Item archived', me);
     VZ.save();
@@ -706,6 +724,7 @@
       return { ok: false, error: 'An active item already uses this name. Rename that item before restoring.' };
     }
     p.archived = false;
+    delete p.archiveReason;
     VZ.log('inventory', 'Restored item ' + p.name, me);
     VZ.audit('inventory.restore', p.name, 'Item restored to active inventory', me);
     VZ.save();

@@ -1,3 +1,7 @@
+V12 fixes expiry archiving by archiving batches individually. Archived batches are excluded from active stock and sale deductions. Mixed-stock products keep their usable batches active. Archived quantities and labels are shown separately; whole-product archiving remains an explicitly labeled action. Existing accidental whole-product archives can be restored before using the new expired-only action.
+
+New checks: node tests/check-expired-stock.js and node tests/check-expired-stock-browser.js. They verify permissions, duplicates, fresh/today/no-expiry stock, other products, archive history, reload, safe sales and all-expired restore behavior.
+
 V11 adds release-home and missed-checkup workflows, using the existing admin/staff approval rules. The two new checks are:
 
 ```bash

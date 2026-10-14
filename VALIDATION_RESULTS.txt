@@ -1,3 +1,19 @@
+V12 verification (October 14, 2026)
+
+PASS: eight data/static checks: check-project.js, check-archive.js,
+check-static-pages.js, check-feature-ids-deceased.js,
+check-death-date-validation.js, check-workflows.js,
+check-release-attendance.js, check-expired-stock.js.
+PASS: check-workflows-browser.js and check-expired-stock-browser.js.
+
+The new checks demonstrate that only past-expiry batches are archived;
+fresh stock, stock expiring today, no-expiry stock and other products are
+preserved. Archived quantities/metadata persist; active fresh stock remains
+sellable. Admin permissions, cancellation, duplicate guards, audit and
+all-expired product restore safety passed. Browser flows have no uncaught errors.
+
+Earlier version verification is retained below:
+
 V11 verification (October 14, 2026)
 
 PASS: all ten current checks, including the three Chromium browser suites.

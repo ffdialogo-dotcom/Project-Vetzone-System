@@ -68,9 +68,10 @@
 
   function filtered() {
     var q = state.q.trim().toLowerCase();
-    var list = VZ.products(true).filter(function (p) { return state.view === 'archived' ? !!p.archived : !p.archived; }).map(function (p) { return { p: p, i: VZ.info(p) }; }).filter(function (x) {
+    var list = VZ.products(true).filter(function (p) { return state.view === 'archived' ? (!!p.archived || VZ.archivedBatches(p).length > 0) : !p.archived; }).map(function (p) { return { p: p, i: VZ.info(p) }; }).filter(function (x) {
       if (q && x.p.name.toLowerCase().indexOf(q) < 0 && x.p.category.toLowerCase().indexOf(q) < 0 && (x.p.displayId || '').toLowerCase().indexOf(q) < 0) return false;
       if (state.cat !== 'All' && x.p.category !== state.cat) return false;
+      if (state.view === 'archived') return true;
       if (state.status === 'in') return !x.i.low && !x.i.expiring && !x.i.out;
       if (state.status === 'low') return x.i.low;
       if (state.status === 'expiring') return x.i.expiring;
@@ -97,6 +98,8 @@
     renderProposals();
     el.tabs.querySelectorAll('[data-view]').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-view') === state.view)); });
     el.region.setAttribute('aria-labelledby', state.view === 'active' ? 'inv-active-tab' : 'inv-archived-tab');
+    el.status.disabled = state.view === 'archived';
+    el.region.querySelector('thead th:nth-child(5)').textContent = state.view === 'archived' ? 'Archived quantity' : 'In stock';
     el.add.hidden = state.view === 'archived';
     var pendingBy = {};
     VZ.inventoryRequests('pending').forEach(function (r) { if (r.productId) pendingBy[r.productId] = (pendingBy[r.productId] || 0) + 1; });
@@ -107,14 +110,15 @@
       el.rows.innerHTML = '<tr><td colspan="8" class="empty">' + (state.view === 'archived' ? 'No archived items match your search.' : 'No items match your search. Clear the filters or add a new item.') + '</td></tr>';
     } else {
       el.rows.innerHTML = slice.map(function (x) {
-        var p = x.p, i = x.i;
+        var p = x.p, i = x.i, archived = VZ.archivedBatches(p), archivedQty = archived.reduce(function (n, b) { return n + b.qty; }, 0);
         var exp = i.nextExpiry ? VZ.fmtDate(i.nextExpiry) : (i.expired ? 'Expired' : 'No expiry');
+        if (state.view === 'archived') exp = archived.some(function (b) { return b.expiry && b.expiry < VZ.today(); }) ? 'Expired stock' : exp;
         var pend = pendingBy[p.id] ? ' <span class="chip chip-grey" title="A change to this item is waiting for admin approval">Change pending</span>' : '';
         return '<tr><td class="item-code nowrap">' + VZ.esc(p.displayId || p.id) + '</td><td><span class="item-cell"><span class="thumb" aria-hidden="true">' + p.emoji + '</span><span>' + VZ.esc(p.name) + pend + '</span></span></td>' +
-          '<td>' + VZ.esc(p.category) + '</td><td class="num nowrap">' + VZ.money(p.price) + '</td><td class="num">' + i.sellable + '</td><td class="nowrap">' + exp + '</td>' +
-          '<td>' + (state.view === 'archived' ? '<span class="chip chip-grey">Archived</span>' : VZ.chipsHTML(VZ.chips(i))) + '</td>' +
+          '<td>' + VZ.esc(p.category) + '</td><td class="num nowrap">' + VZ.money(p.price) + '</td><td class="num">' + (state.view === 'archived' ? archivedQty : i.sellable) + '</td><td class="nowrap">' + exp + '</td>' +
+          '<td>' + (state.view === 'archived' ? '<span class="chip chip-grey">' + (p.archived && p.archiveReason !== 'expired_stock' ? 'Archived product' : 'Archived expired stock') + '</span>' : VZ.chipsHTML(VZ.chips(i))) + '</td>' +
           '<td><span class="row-actions">' + (state.view === 'archived' ?
-            '<button type="button" class="btn btn-ghost btn-sm" data-act="batches" data-id="' + p.id + '">Batches</button>' + (VZ.can('inventory.restore') ? '<button type="button" class="btn btn-sm" data-act="restore" data-id="' + p.id + '">' + VZ.icon('archive', 14) + ' Restore</button>' : '') :
+            '<button type="button" class="btn btn-ghost btn-sm" data-act="batches" data-id="' + p.id + '">Batches</button>' + (p.archived && VZ.can('inventory.restore') ? '<button type="button" class="btn btn-sm" data-act="restore" data-id="' + p.id + '">' + VZ.icon('archive', 14) + ' Restore</button>' : '') :
             '<button type="button" class="btn btn-ghost btn-sm" data-act="restock" data-id="' + p.id + '">' + VZ.icon('plus', 14) + ' Stock</button>' +
             '<button type="button" class="btn btn-ghost btn-sm" data-act="batches" data-id="' + p.id + '">Batches</button>' +
             '<button type="button" class="btn btn-ghost btn-sm" data-act="manage" data-id="' + p.id + '" aria-label="Manage ' + VZ.esc(p.name) + '">Manage</button>') + '</span></td></tr>';
@@ -201,14 +205,15 @@
       '<p class="caption" style="margin-top:0">Current stock: <b>' + VZ.info(p).sellable + '</b>. ' + (isAdmin ? 'Changes you make here are applied at once.' : 'Changes are sent to the admin for approval.') + '</p>' +
       '<div class="manage-list"><button type="button" class="btn btn-ghost btn-block" data-do="edit">' + VZ.icon('edit', 18) + ' Edit item details</button>' +
       '<button type="button" class="btn btn-ghost btn-block" data-do="correct">' + VZ.icon('alert', 18) + ' Correct the stock count</button>' +
-      (VZ.can('inventory.archive') ? '<button type="button" class="btn btn-ghost btn-block" data-do="archive">' + VZ.icon('archive', 18) + ' Archive this item</button>' : '') + '</div>' +
+      (VZ.can('inventory.archive') && VZ.info(p).expiredQty > 0 ? '<button type="button" class="btn btn-block" data-do="archive-expired">Archive expired stock only (' + VZ.info(p).expiredQty + ' units)</button>' : '') +
+      (VZ.can('inventory.archive') ? '<button type="button" class="btn btn-ghost btn-block" data-do="archive">' + VZ.icon('archive', 18) + ' Archive entire product</button>' : '') + '</div>' +
       '<div class="modal-actions"><button type="button" class="btn" data-cancel>Close</button></div>');
     m.body.querySelector('[data-cancel]').addEventListener('click', m.close);
     m.body.querySelectorAll('[data-do]').forEach(function (b) {
       b.addEventListener('click', function () {
         var what = b.getAttribute('data-do');
         m.close();
-        if (what === 'edit') editItem(p); else if (what === 'correct') correctStock(p); else archive(p);
+        if (what === 'edit') editItem(p); else if (what === 'correct') correctStock(p); else if (what === 'archive-expired') archiveExpired(p); else archive(p);
       });
     });
   }
@@ -222,8 +227,16 @@
     });
   }
 
+  function archiveExpired(p) {
+    VZ.confirm('Archive expired stock only', 'Move only the ' + VZ.info(p).expiredQty + ' expired units of "' + p.name + '" to Archived? Unexpired and non-expiring stock stay available. If no usable stock remains, the product moves to Archived too.', 'Archive expired stock', true).then(function (yes) {
+      if (!yes) return;
+      var result = VZ.archiveExpiredStock(p.id);
+      if (result.ok) { VZ.toast(result.qty + ' expired units archived.'); render(); VZ.refreshBell(); }
+      else VZ.toast(result.error, 'error');
+    });
+  }
   function archive(p) {
-    VZ.confirm('Archive item', 'Archive "' + p.name + '"? It will be hidden from inventory and sales. Past sales stay in the reports.', 'Archive', true).then(function (yes) {
+    VZ.confirm('Archive entire product', 'Archive "' + p.name + '"? This hides the entire product, including all unexpired stock, from inventory and sales. Past sales stay in the reports.', 'Archive', true).then(function (yes) {
       if (!yes) return;
       var r = VZ.archiveProduct(p.id);
       if (r.ok) { VZ.toast(p.name + ' was archived.'); render(); } else VZ.toast(r.error || 'Could not archive this item.', 'error');
@@ -276,8 +289,9 @@
         if (b.expiry && b.expiry < today) state = '<span class="chip chip-red">Expired</span>';
         else if (b.expiry && VZ.diffDays(today, b.expiry) <= VZ.EXPIRY_DAYS) state = '<span class="chip chip-amber">Expires in ' + VZ.diffDays(today, b.expiry) + ' day(s)</span>';
         else state = '<span class="chip chip-green">Good</span>';
+        state += ' <span class="chip chip-grey">' + (b.archived ? 'Archived expired stock' : p.archived ? 'Archived product' : 'Active stock') + '</span>';
         return '<tr><td>' + b.qty + '</td><td>' + (b.expiry ? VZ.fmtDate(b.expiry) : 'No expiry') + '</td><td>' + VZ.fmtDate(b.received) + '</td><td>' + state + '</td></tr>';
-      }).join('') + '</tbody></table></div><p class="caption">Sales take stock from the batch that expires first. Expired batches cannot be sold.</p>' :
+      }).join('') + '</tbody></table></div><p class="caption">Sales take stock from the batch that expires first. Expired and archived batches cannot be sold. Archived batches are kept here as history.</p>' :
       '<p class="empty">There is no stock for this item yet.</p>';
     var m = VZ.modal('Batches: ' + p.name, body + '<div class="modal-actions"><button type="button" class="btn" data-cancel>Close</button></div>');
     m.body.querySelector('[data-cancel]').addEventListener('click', m.close);

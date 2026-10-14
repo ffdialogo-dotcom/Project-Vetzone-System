@@ -1,1 +1,1 @@
-Versioned downloads are in the versions folder. The complete V11 application is at this branch's root. The standalone files are V11_VetZone.zip (current), V10_VetZone.zip, and V9_VetZone.zip. Each release has its own version branch.
+Current version: V12. Versioned ZIP downloads are in versions, with V9, V10, V11 and V12 available on their own branches. The full current project is also at the repository root.
