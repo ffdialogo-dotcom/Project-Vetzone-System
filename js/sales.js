@@ -57,7 +57,7 @@
       var stockText = p.isService ? 'Clinic service' : i.out ? 'Out of stock' : (i.low ? 'Low: ' : 'In stock: ') + i.sellable;
       var tag = i.soon ? '<span class="chip chip-amber">Expiring</span>' : '';
       return '<div class="product"><div class="pic" aria-hidden="true">' + tag + p.emoji + '</div><h3>' + VZ.esc(p.name) + '</h3>' +
-        '<small class="item-code">Item code: ' + VZ.esc(p.displayId || p.id) + '</small>' +
+        '<small class="item-code"><span class="sr-only">Item code: </span>' + VZ.esc(p.displayId || p.id) + '</small>' +
         '<span class="chip chip-grey" style="align-self:flex-start">' + VZ.esc(p.category) + '</span>' +
         '<span class="price">' + VZ.money(p.price) + '</span><span class="stock ' + stockCls + '">' + stockText + '</span>' +
         '<button type="button" class="btn btn-sm btn-block" data-add="' + p.id + '"' + (left <= 0 ? ' disabled' : '') + ' aria-label="Add ' + VZ.esc(p.name) + ' to order">' + VZ.icon('cart', 16) + ' ' + (i.out ? 'Unavailable' : left <= 0 ? 'All in order' : 'Add to order') + '</button></div>';
@@ -185,16 +185,48 @@
   });
 
   var view = 'record', historyPage = 1, secondary = document.getElementById('sales-secondary-panel');
+  var historyDay = null;
+  function saleDay(s) { return s.ts.slice(0, 10); }
+  function salePending(s) { return VZ.db.workflowRequests.some(function (r) { return r.kind === 'reversal' && r.status === 'pending' && r.payload.saleId === s.id; }); }
+  function saleChip(s) {
+    var pending = salePending(s);
+    return '<span class="chip ' + (s.status === 'voided' ? 'chip-grey' : pending ? 'chip-amber' : 'chip-green') + '">' + (s.status === 'voided' ? 'Reversed' : pending ? 'Pending review' : 'Recorded') + '</span>';
+  }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  // One day at a time: each sale with what was bought, like the dashboard chart but in full.
+  function renderDay(sales) {
+    var days = sales.map(saleDay).sort();
+    var today = VZ.today();
+    if (!historyDay) historyDay = days.length ? days[days.length - 1] : today;
+    var list = sales.filter(function (s) { return saleDay(s) === historyDay; }).sort(function (a, b) { return a.ts < b.ts ? -1 : 1; });
+    var counted = list.filter(function (s) { return s.status !== 'voided'; });
+    var total = counted.reduce(function (n, s) { return n + s.total; }, 0);
+    var items = counted.reduce(function (n, s) { return n + s.items.reduce(function (m, l) { return m + l.qty; }, 0); }, 0);
+    var earlier = days.filter(function (d) { return d < historyDay; }).pop(), later = days.filter(function (d) { return d > historyDay; })[0];
+    return '<div class="history-day-bar"><button type="button" class="btn btn-ghost btn-sm" data-day-go="' + (earlier || '') + '"' + (earlier ? '' : ' disabled') + ' aria-label="Previous day with sales">' + VZ.icon('back', 14) + ' Previous</button>' +
+      '<label class="history-date"><span class="sr-only">Sales date</span><input class="input" type="date" id="history-date" max="' + today + '" value="' + historyDay + '"></label>' +
+      '<button type="button" class="btn btn-ghost btn-sm" data-day-go="' + (later || '') + '"' + (later ? '' : ' disabled') + ' aria-label="Next day with sales">Next ' + VZ.icon('arrow', 14) + '</button>' +
+      (historyDay !== today ? '<button type="button" class="btn btn-sm" data-day-go="' + today + '">Today</button>' : '') + '</div>' +
+      '<div class="history-summary"><div><small>Date</small><b>' + VZ.fmtDate(historyDay) + '</b></div><div><small>Total sales</small><b>' + VZ.money(total) + '</b></div><div><small>Sales</small><b>' + counted.length + '</b></div><div><small>Items sold</small><b>' + items + '</b></div></div>' +
+      (list.length
+        ? '<ul class="history-list">' + list.map(function (s) {
+            return '<li class="history-sale' + (s.status === 'voided' ? ' is-voided' : '') + '"><div class="history-main"><b class="history-line">' + VZ.esc(s.no) + ' · ' + VZ.money(s.total) + ' · ' + VZ.esc(s.method) + '</b>' +
+              '<span class="history-items">' + s.items.map(function (l) { return l.qty + ' × ' + VZ.esc(l.name); }).join(', ') + '</span>' +
+              '<small class="history-meta">' + VZ.fmtTime(s.ts) + (s.by ? ' · recorded by ' + VZ.esc(VZ.userName ? VZ.userName(s.by) : s.by) : '') + '</small></div>' +
+              '<div class="history-side">' + saleChip(s) + '<button type="button" class="btn btn-ghost btn-sm" data-sale-view="' + s.id + '">View</button></div></li>';
+          }).join('') + '</ul>' + (list.length !== counted.length ? '<p class="caption">Reversed sales are listed but not counted in the totals.</p>' : '')
+        : '<p class="empty">No sales recorded on ' + VZ.fmtDate(historyDay) + '.</p>');
+  }
   document.getElementById('service-admin-tab').hidden = !VZ.can('users.manage');
   function renderView() {
     document.querySelectorAll('[data-sales-tab]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.salesTab === view)); });
     document.getElementById('sales-record-panel').hidden = view !== 'record'; secondary.hidden = view === 'record';
     if (view === 'history') {
       var sales = VZ.visibleSales();
-      secondary.innerHTML = '<div class="card-head"><h2>Sales history</h2><span class="caption">Original records are retained after reversal.</span></div>' + VZ.ui.table(sales, ['Sale', 'Date', 'Payment', 'Total', 'Status', 'Action'], function (s) {
-        var pending = VZ.db.workflowRequests.some(function (r) { return r.kind === 'reversal' && r.status === 'pending' && r.payload.saleId === s.id; });
-        return '<tr><td><b>' + VZ.esc(s.no) + '</b></td><td>' + VZ.fmtDate(s.ts.slice(0, 10)) + '</td><td>' + VZ.esc(s.method) + '</td><td>' + VZ.money(s.total) + '</td><td><span class="chip ' + (s.status === 'voided' ? 'chip-grey' : pending ? 'chip-amber' : 'chip-green') + '">' + (s.status === 'voided' ? 'Reversed' : pending ? 'Pending review' : 'Recorded') + '</span></td><td><button type="button" class="btn btn-ghost btn-sm" data-sale-view="' + s.id + '">View</button></td></tr>';
-      }, historyPage);
+      secondary.innerHTML = '<div class="card-head"><h2>Sales history</h2></div><p class="caption" style="margin-top:0">See what was sold on a date. Original records are retained after reversal.</p>' + renderDay(sales);
+      var dateInput = document.getElementById('history-date');
+      dateInput.addEventListener('change', function () { if (dateInput.value) { historyDay = dateInput.value; renderView(); } });
+      return;
     } else if (view === 'services') {
       secondary.innerHTML = '<div class="card-head"><h2>Service prices</h2><button type="button" class="btn btn-sm" data-service-add>Add service</button></div><p class="caption">Sample prices can be edited for your clinic.</p>' + VZ.ui.table(VZ.db.services, ['Code', 'Service', 'Price', 'Status', 'Action'], function (s) { return '<tr><td>' + VZ.esc(s.displayId) + '</td><td>' + VZ.esc(s.name) + '</td><td>' + VZ.money(s.price) + '</td><td>' + (s.active ? 'Available' : 'Unavailable') + '</td><td><button type="button" class="btn btn-ghost btn-sm" data-service-edit="' + s.id + '">Edit</button></td></tr>'; }, historyPage);
     }
@@ -204,6 +236,7 @@
   secondary.addEventListener('click', function (event) {
     var b = event.target.closest('button'); if (!b) return;
     if (b.dataset.page) { historyPage = Number(b.dataset.page); renderView(); }
+    if (b.dataset.dayGo) { historyDay = b.dataset.dayGo; renderView(); }
     if (b.hasAttribute('data-service-add')) VZ.ui.service(null, renderView);
     if (b.dataset.serviceEdit) VZ.ui.service(VZ.db.services.filter(function (s) { return s.id === b.dataset.serviceEdit; })[0], renderView);
     if (b.dataset.saleView) {

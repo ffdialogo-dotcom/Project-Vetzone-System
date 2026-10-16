@@ -1,3 +1,67 @@
+V24 verification
+
+PASS: all 22 checks in tests/.
+Help accuracy (Chromium): for every topic, the screens it describes were opened as staff and as admin and every
+button and field name in the answer was found on screen: 152 names in 20 staff topics and 182 names in 24 admin
+topics, 0 missing. Each "Go to" button opens the right page. The checker also followed several answers to the end:
+recorded a product sale and a service sale, added stock, added a pet, booked an appointment, and changed a password.
+Statements were also checked: staff vaccinations, stock corrections, and sale reversals go to the admin; the
+attendance buttons appear after the visit time; one sale can hold products and services; the staff bell shows
+approvals and rejections.
+Layout: all 12 pages (Help with every answer open and with a search) at 14 sizes from 320 px phones to a 1920 px PC:
+0 problems. Pop-ups at 2 phone sizes: 0 problems. The search hint fits at every size.
+
+V23 verification
+
+PASS: all 22 checks in tests/.
+Chromium, 11 pages and every tab on each (including tabs that appear after switching, and the pet list view),
+at 19 sizes: phones 320x568, 360x740, 375x667, 390x844, 412x915, 430x932; sideways phones 667x375, 844x390,
+932x430; tablets 600x960, 768x1024, 800x1280, 820x1180, 1024x1366, 1024x768, 1180x820; laptops 1280x800 and
+1366x768; PC 1920x1080. 0 problems: no tall menu bar, no cut tabs or tab text, no sideways scrolling inside any
+table or box, no controls off screen, no table cell cut or missing its label, nothing sticking out of a card,
+no page sideways scrolling, no errors. Pop-up check (notifications, user menu, phone menu, chart tooltip, toast,
+7 dialogs) at 6 sizes: 0 problems. Laptops 1280 px and up show all 23 table views as normal tables.
+
+V22 verification
+
+PASS: all 22 checks in tests/.
+Chromium pop-up check at 24 sizes (6 portrait phones 320 to 430 px, 6 landscape phones, 9 tablets in portrait
+and landscape, 2 laptops, 1 PC): notification panel, user menu, phone menu, chart tooltip on the first, middle,
+and last dot, a long message toast, and the Add item, Review sale, Pet actions, Edit pet, Clinic stay, New
+appointment, and Review change dialogs are fully on screen, with titles and close buttons reachable. 0 problems.
+Page width: 13 pages at 20 sizes (260 page views) with no sideways scrolling and no uncaught errors.
+
+V21 verification
+
+PASS: all 22 checks in tests/.
+Chromium, 13 pages at 1920x1080, 1366x768, 1280x800, 1180x820, 820x1180, 768x1024, 390x844, 375x812,
+360x740, and 320x640: no sideways page scrolling, no stat amount split across lines, no uncaught errors.
+Phone menu: opens with all 9 admin links, closes with Escape, and links navigate. Tablet rail: tooltips
+and the Approvals badge present. Phone touch targets for toggles and tabs are at least 40 px tall.
+
+V20 verification
+
+PASS: all 22 checks in tests/ (check-workflows-browser.js now confirms History has only the By date view).
+Chromium at 1366 and 390 px: inventory tabs 18 px above and 16 px below with proposals, without proposals,
+and in the archived view; Products/Services toggle 14 px above and 16 px below; no sideways scrolling; no errors.
+
+V19 verification
+
+PASS: all 22 checks in tests/. check-workflows-browser.js was updated for the requested chart tooltip
+(date, income, number of sales; no product list or Close button; clicking outside closes it) and now also
+checks Record sales > History (sale numbers, products, quantities, day total, and the All sales table).
+Chromium: Add to order buttons line up in every row with no wrapping and no cut-off item codes at 1366,
+1024, 390, and 360 px; 18 px between the stat cards and Proposed changes; no sideways page scrolling on
+11 pages at those widths; no uncaught errors.
+
+V18 verification
+
+PASS: all 22 existing checks in tests/ (data and Chromium browser suites), unchanged.
+Checked in Chromium: no sideways page scrolling on 13 pages at 1366, 1024, 768, 390, and 360 px;
+inventory table fits its card at 1366 px; sales chart tooltip shows on real mouse hover, keyboard
+focus, and click, with the exact day total, sale count, item count, sale numbers, and products;
+no uncaught browser errors.
+
 V17 verification (October 14, 2026)
 
 PASS: check-project.js, check-v13-workflows.js,

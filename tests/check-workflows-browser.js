@@ -106,15 +106,27 @@ const http=require('node:http');
       const sales=VZ.salesBetween(VZ.today(),VZ.today()),a=VZ.aggregate(sales);
       return {count:a.n,items:a.items,total:VZ.money(a.net),saleNumbers:sales.map(s=>s.no)};
     });
+    // V19: the chart dot shows only the date, the income, and the number of sales (no list, no Close button).
     const point=page.locator('#sales-chart [data-chart-point]').last();await point.hover();
     const tip=page.locator('#sales-chart-tooltip');assert.equal(await tip.isVisible(),true);
-    const detail=await tip.innerText();assert.ok(detail.includes(expected.count+' sales'));assert.ok(detail.includes(expected.items+' items'));assert.ok(detail.includes(expected.total));
-    assert.ok(detail.includes(product.name));for(const no of [cash.no,online.no])assert.ok(detail.includes(no));
+    const detail=await tip.innerText();assert.ok(detail.includes(expected.count+' sales'));assert.ok(detail.includes(expected.total));
+    assert.ok(detail.includes(await page.evaluate(()=>VZ.fmtDate(VZ.today()))),'tooltip shows the date');
+    assert.ok(!detail.includes(product.name)&&!detail.includes(cash.no),'tooltip no longer lists products or sale numbers');
+    assert.equal(await tip.locator('button').count(),0,'no Close button');
     await point.focus();await point.press('Enter');assert.equal(await tip.isVisible(),true);await point.press('Escape');assert.equal(await tip.isVisible(),false);
+    await point.click();assert.equal(await tip.isVisible(),true);await page.locator('h1').click();assert.equal(await tip.isVisible(),false,'clicking outside closes a pinned tooltip');
     const zero=page.locator('#sales-chart [data-chart-point][aria-label*="0 sales"]').first();
-    if(await zero.count()){await zero.hover();assert.ok((await tip.innerText()).includes('No sales recorded'));await tip.locator('button').click();}
+    if(await zero.count()){await zero.hover();assert.ok((await tip.innerText()).includes('0 sales'));}
     await page.locator('[data-days="7"]').click();assert.equal(await page.locator('#sales-chart [data-chart-point]').count(),7);
-    await page.locator('#sales-chart [data-chart-point]').last().hover();assert.ok((await tip.innerText()).includes(cash.no));
+    await page.locator('#sales-chart [data-chart-point]').last().hover();assert.ok((await tip.innerText()).includes(expected.total));
+    // V19: Record sales > History shows each sale of a date with what was bought.
+    await open('sales.html');await page.locator('[data-sales-tab=history]').click();
+    const hist=await page.locator('#sales-secondary-panel').innerText();
+    for(const no of [cash.no,online.no])assert.ok(hist.includes(no),'history lists '+no);
+    assert.ok(hist.includes(product.name),'history shows the products bought');
+    assert.ok(hist.includes(expected.total),'history shows the day total');
+    assert.ok(/ × /.test(hist),'history shows quantities');
+    assert.equal(await page.locator('[data-history-mode]').count(),0,'History has only the By date view');
     assert.deepEqual(errors,[]);
     console.log('PASS: admin direct deceased confirmation/cancel/persistence, distinct role IDs, visible and searchable item codes, cash/online sale review, cancellation without writes, insufficient cash, live change, duplicate confirmation guard, stock and cash persistence, chart hover/focus/date-range sale details, and mobile code/confirmation visibility.');
     await context.close();

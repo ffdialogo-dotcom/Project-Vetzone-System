@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link href="img/favicon.png" rel="icon" type="image/png"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Help | VetZone VetCare System</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="css/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="app"></div>
+<template id="vz-static-page">
+<section class="card help-intro" aria-labelledby="help-title">
+<h2 id="help-title">How can we help?</h2>
+<p>Tap a question below to see the steps. Button names are shown like this: <span class="ui-btn">Review sale</span>. Look for the same words on the screen.</p>
+<label class="search help-search"><span data-icon="search" data-size="20"></span><span class="sr-only">Search help</span><input id="help-q" type="search" placeholder="Search, like: sale or pet"/></label>
+<div class="help-quick" id="help-quick" aria-label="Most used"></div>
+</section>
+<div id="help-list"></div>
+<p class="help-empty" id="help-empty" hidden>No help found for that word. Try a simpler word, like <b>sale</b>, <b>stock</b>, or <b>pet</b>.</p>
+<section class="card help-more"><h2>Still need help?</h2><p>Ask the clinic admin. Nothing is saved until you tap the last button (for example <span class="ui-btn">Save pet</span> or <span class="ui-btn">Confirm and record sale</span>). If you are not sure, tap <span class="ui-btn">Cancel</span> and nothing changes.</p></section>
+</template>
+<noscript>This system needs JavaScript to run. Please turn it on in your browser.</noscript>
+<script src="js/app.js"></script>
+<script src="js/workflow-data.js"></script>
+<script src="js/workflow-ui.js"></script>
+<script src="js/help.js"></script>
+</body>
+</html>

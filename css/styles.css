@@ -558,3 +558,253 @@ body.modal-open { overflow: hidden; }
 .calendar-counts { display: flex; flex-direction: column; gap: 2px; }
 .calendar-day .calendar-due { color: var(--action); }
 .calendar-day .calendar-overdue { color: #b32626; }
+
+
+/* ================= V18 design fixes ================= */
+/* Chart tooltip: compact and dark, with the day's income large. */
+.chart-tooltip { width: 270px; padding: 12px 14px; border: 0; border-radius: 12px; background: #1a4036; color: #fff; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22); overflow: visible; }
+.chart-tooltip .chart-tooltip-content { white-space: normal; margin-bottom: 8px; max-height: 210px; overflow: auto; }
+.chart-tooltip .chart-tooltip-content.plain { white-space: pre-line; }
+.chart-tooltip .tip-head { display: grid; gap: 1px; text-align: center; padding-bottom: 8px; }
+.chart-tooltip .tip-date { font-size: 0.75rem; opacity: 0.85; }
+.chart-tooltip .tip-total { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.2px; }
+.chart-tooltip .tip-meta { font-size: 0.75rem; opacity: 0.85; }
+.chart-tooltip .tip-sales { list-style: none; margin: 0; padding: 8px 0 0; border-top: 1px solid rgba(255, 255, 255, 0.18); display: grid; gap: 7px; }
+.chart-tooltip .tip-sales li { display: grid; gap: 1px; font-size: 0.78rem; }
+.chart-tooltip .tip-sales small { opacity: 0.78; font-size: 0.72rem; line-height: 1.35; }
+.chart-tooltip .tip-empty { margin: 0; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.18); font-size: 0.78rem; opacity: 0.85; text-align: center; }
+.chart-tooltip .btn { display: block; margin: 0 auto; min-height: 0; padding: 3px 14px; font-size: 0.75rem; color: #fff; background: transparent; border-color: rgba(255, 255, 255, 0.45); }
+.chart-tooltip .btn:hover { background: rgba(255, 255, 255, 0.12); }
+.chart-tooltip.above::after { content: ''; position: absolute; left: var(--arrow-x, 50%); bottom: -5px; width: 10px; height: 10px; background: #1a4036; transform: translateX(-50%) rotate(45deg); }
+
+/* Tables: keep screen-reader text inside the scroll box, so pages never scroll sideways. */
+.table-wrap { position: relative; }
+
+/* Item codes use the app font instead of typewriter text. */
+.item-code { font-family: inherit; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.3px; color: var(--green-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Inventory: room between the proposed changes and the list, and a table that fits its card. */
+.proposal-card { margin-bottom: 18px; }
+#inv-table-region .table td, #inv-table-region .table th { padding-left: 10px; padding-right: 10px; }
+#inv-table-region .row-actions { flex-wrap: nowrap; gap: 4px; }
+#inv-table-region .row-actions .btn-sm { padding-left: 9px; padding-right: 9px; }
+
+/* Record sales: smaller cards, so more items fit on each row. */
+.product-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.product .pic { height: 74px; font-size: 2.2rem; }
+
+/* Tabs stay on one line and scroll sideways on small screens, instead of wrapping into a blob. */
+@media (max-width: 700px) {
+  .status-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; border-radius: 999px; scrollbar-width: none; }
+  .status-tabs::-webkit-scrollbar { display: none; }
+  .status-tabs button { flex: none; white-space: nowrap; }
+}
+
+/* Clinic calendar: due counts easier to read. */
+.calendar-day small { font-size: 0.74rem; font-weight: 600; }
+
+/* The sidebar color reaches the bottom of long pages too. */
+@media (min-width: 801px) { .app { background: linear-gradient(90deg, var(--blush) 0, var(--blush) 250px, transparent 250px); } }
+
+/* Small phones: two stat cards per row that can shrink, so big peso amounts never push the page sideways. */
+@media (max-width: 560px) {
+  .stat-grid, .mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat .stat-num, .stat .stat-num.sm { font-size: clamp(1rem, 4.8vw, 1.5rem); overflow-wrap: anywhere; }
+  .stat { min-width: 0; }
+}
+
+
+/* ================= V19 ================= */
+/* Chart tooltip: only the date, the income, and the number of sales. No list, no scrolling. */
+.chart-tooltip { width: auto; min-width: 150px; max-height: none !important; padding: 10px 16px; }
+.chart-tooltip .chart-tooltip-content { margin: 0; max-height: none; overflow: visible; }
+.chart-tooltip .tip-head { padding: 0; }
+
+/* Record sales: every card lines up, with its button on the same row. */
+.product h3 { min-height: 2.6em; }
+.product .item-code { white-space: nowrap; color: var(--muted); font-weight: 500; }
+.product > button[data-add] { margin-top: auto; }
+
+/* Inventory: the proposed changes box no longer touches the cards above it. */
+.proposal-card { margin-top: 18px; }
+
+/* Sales history by date. */
+.history-day-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 14px; }
+.history-date .input { width: auto; min-width: 170px; }
+.history-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.history-summary > div { background: var(--blush); border-radius: var(--radius-sm); padding: 10px 14px; display: grid; gap: 2px; }
+.history-summary small { color: var(--muted); font-size: 0.78rem; }
+.history-summary b { font-size: 1.05rem; }
+.history-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.history-sale { display: flex; justify-content: space-between; align-items: center; gap: 14px; border: 2px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; background: #fff; }
+.history-main { display: grid; gap: 3px; min-width: 0; }
+.history-line { font-weight: 700; }
+.history-items { color: var(--ink); font-size: 0.9rem; overflow-wrap: anywhere; }
+.history-meta { color: var(--muted); font-size: 0.78rem; }
+.history-side { display: flex; align-items: center; gap: 8px; flex: none; }
+.history-sale.is-voided .history-line, .history-sale.is-voided .history-items { text-decoration: line-through; color: var(--muted); }
+@media (max-width: 700px) {
+  .history-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .history-sale { flex-direction: column; align-items: flex-start; }
+}
+.product > button[data-add] { white-space: nowrap; padding-left: 8px; padding-right: 8px; font-size: 0.82rem; gap: 6px; min-height: 36px; }
+
+
+/* ================= V20 ================= */
+/* Even space around the Active/Archived tabs, whether or not there are proposed changes. */
+.proposal-card { margin-bottom: 0; }
+.inventory-view-tabs { margin: 18px 0 16px; }
+/* Record sales: the Products/Services toggle no longer touches the search bar. */
+.catalog-toggle { margin: 14px 0 4px; }
+
+
+/* ================= V21 responsive pass ================= */
+.menu-toggle { display: none; }
+
+/* Tablets (801 to 1100 px): the menu becomes an icon rail, so pages get the width. */
+@media (min-width: 801px) and (max-width: 1100px) {
+  .app { grid-template-columns: 84px minmax(0, 1fr); background: linear-gradient(90deg, var(--blush) 0, var(--blush) 84px, transparent 84px); }
+  .sidebar { padding: 16px 10px; align-items: center; }
+  .sidebar .logo { padding: 4px 0 14px; justify-content: center; }
+  .sidebar .logo-text, .nav-label, .sidebar-foot { display: none; }
+  .sidebar .logo-img { height: 40px; }
+  .nav { align-items: center; }
+  .nav a { width: 58px; justify-content: center; padding: 12px 0; position: relative; }
+  .nav a .nav-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .nav a .nav-badge { position: absolute; top: 3px; right: 3px; margin: 0; min-width: 18px; padding: 0 5px; font-size: 0.66rem; line-height: 1.5; }
+}
+
+/* Phones (800 px and below): only the logo and a Menu button until the menu is opened. */
+@media (max-width: 800px) {
+  .sidebar { flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 8px 14px; gap: 8px; border-right: 0; border-bottom: 2px solid var(--rose); }
+  .sidebar .logo-img { height: 38px; }
+  .sidebar .logo { font-size: 1.3rem; }
+  .menu-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 2px solid var(--action); background: #fff; color: var(--action); font: inherit; font-weight: 600; cursor: pointer; position: relative; }
+  .menu-toggle:focus-visible { outline: 3px solid var(--action); outline-offset: 2px; }
+  .menu-dot { position: absolute; top: 6px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: var(--action); }
+  .sidebar .nav { display: none; width: 100%; flex-direction: column; flex-wrap: nowrap; gap: 4px; padding-top: 4px; }
+  .sidebar.menu-open .nav { display: flex; }
+  .sidebar .nav a { min-height: 44px; padding: 10px 14px; }
+  /* Bigger touch targets for the small toggles */
+  .range button, .catalog-toggle button, .status-tabs button { min-height: 40px; }
+}
+/* Income: the three totals stack on phones so each amount has room. */
+@media (max-width: 560px) { #income-stats { grid-template-columns: 1fr !important; } }
+/* Income: the Daily/Weekly/Monthly tabs drop under the title on phones and never push the page sideways. */
+@media (max-width: 560px) {
+  .report-head { flex-wrap: wrap; }
+  .report-head .tabs { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .report-head .tabs::-webkit-scrollbar { display: none; }
+  .report-head .tabs button { flex: none; white-space: nowrap; }
+}
+
+
+/* ================= V22: pop-ups stay on screen ================= */
+.dropdown { overflow: auto; }
+@media (max-width: 800px) {
+  /* Phones: the notification panel and user menu open full width under the bell, never off the edge. */
+  .dropdown { position: fixed; left: 10px; right: 10px; top: 10px; width: auto; min-width: 0; max-width: none; z-index: 150; box-shadow: 0 14px 40px rgba(23, 68, 60, 0.25); }
+  .bell-panel { width: auto; max-width: none; }
+  .bell-panel .alert-list { max-height: none; overflow: visible; }
+  /* Messages fit small screens. */
+  .toasts { left: 12px; right: 12px; bottom: 12px; }
+  .toasts > * { max-width: 100%; }
+}
+/* Dialogs: centered when they fit; when taller than the screen they start at the top and scroll, so the title and close button are always reachable. */
+.modal-overlay { display: flex; align-items: flex-start; justify-content: center; }
+.modal-overlay > .modal { margin: auto 0; flex: 0 1 auto; }
+
+
+/* ================= V23: phone layout fixes ================= */
+/* 1. The menu bar stays compact on short pages: extra height goes to the page, not the menu. */
+@media (max-width: 800px) {
+  .app { grid-template-rows: auto 1fr; align-content: start; }
+}
+
+/* 2. Tabs on phones wrap into a grid, so every tab is fully visible (no sideways scrolling, nothing cut). */
+@media (max-width: 700px) {
+  .status-tabs, .report-head .tabs {
+    display: grid !important; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px;
+    width: 100%; max-width: 100%; overflow: visible !important; border-radius: 18px; padding: 6px;
+  }
+  .status-tabs button, .report-head .tabs button {
+    white-space: normal !important; text-align: center; line-height: 1.25; padding: 9px 8px; border-radius: 12px; min-height: 42px; flex: initial;
+  }
+}
+
+/* 3. A table that does not fit its space (any screen size): each row becomes a card with labels, so no column is hidden and nothing scrolls sideways. */
+
+  .table-wrap.cards-wrap { overflow: visible; border: 0; border-radius: 0; background: transparent; }
+  table.table.as-cards { min-width: 0 !important; width: 100%; }
+  table.table.as-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  table.table.as-cards, table.table.as-cards tbody, table.table.as-cards tfoot, table.table.as-cards tr, table.table.as-cards td, table.table.as-cards tbody th, table.table.as-cards tfoot th { display: block; }
+  table.table.as-cards tbody tr, table.table.as-cards tfoot tr { border: 2px solid var(--line); border-radius: var(--radius-sm); background: #fff; padding: 4px 12px; margin-bottom: 10px; }
+  table.table.as-cards tfoot tr { background: var(--blush-soft); }
+  table.table.as-cards td, table.table.as-cards tbody th, table.table.as-cards tfoot th {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 8px 0; border: 0; border-bottom: 1px solid var(--line); text-align: right; white-space: normal !important; min-width: 0;
+  }
+  table.table.as-cards tr > :last-child { border-bottom: 0; }
+  table.table.as-cards td::before, table.table.as-cards tbody th::before, table.table.as-cards tfoot th::before {
+    content: attr(data-label); font-weight: 600; font-size: 0.8rem; color: var(--muted); text-align: left; flex: 0 1 auto; max-width: 48%;
+  }
+  table.table.as-cards td[data-label=""]::before { content: none; }
+  table.table.as-cards td[data-label=""] { justify-content: flex-end; }
+  table.table.as-cards td > * { min-width: 0; overflow-wrap: anywhere; }
+  table.table.as-cards td.cell-full { justify-content: center; text-align: center; border: 0; }
+  table.table.as-cards td.cell-full::before { content: none; }
+  table.table.as-cards tr:has(> td.cell-full) { padding: 10px 12px; }
+  table.table.as-cards .row-actions { flex-wrap: wrap !important; justify-content: flex-end; }
+  table.table.as-cards .item-cell { justify-content: flex-end; text-align: right; }
+
+@media (max-width: 700px) {
+  .status-tabs, .report-head .tabs { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+  .status-tabs button, .report-head .tabs button { font-size: 0.84rem; padding: 8px 6px; }
+}
+
+/* Laptops and tablets: slightly tighter table cells, so wide tables fit as normal tables more often. */
+@media (min-width: 641px) and (max-width: 1365px) {
+  .table th, .table td { padding-left: 10px; padding-right: 10px; }
+}
+@media (min-width: 641px) and (max-width: 1365px) {
+  .table th { white-space: normal; }
+  #inv-table-region .table { font-size: 0.93rem; }
+  #inv-table-region .row-actions .btn-sm { padding-left: 7px; padding-right: 7px; }
+}
+
+/* ================= Help page ================= */
+.help-intro p { font-size: 1.02rem; margin: 6px 0 14px; }
+.help-search { max-width: 640px; }
+.help-search input { font-size: 1rem; }
+.help-quick { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.help-quick .btn { min-height: 48px; font-size: 1rem; padding: 0 20px; }
+.help-group { margin-top: 18px; }
+.help-group h2 { margin-bottom: 8px; }
+.help-item { border: 2px solid var(--line); border-radius: var(--radius-sm); background: #fff; margin-top: 10px; }
+.help-item summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 12px 16px; font-size: 1.05rem; font-weight: 600; color: var(--ink); border-radius: var(--radius-sm); }
+.help-item summary::-webkit-details-marker { display: none; }
+.help-item summary::after { content: '+'; flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--blush); color: var(--action); font-size: 1.3rem; font-weight: 700; line-height: 1; }
+.help-item[open] summary::after { content: '\2212'; }
+.help-item summary:hover { background: var(--blush-soft); }
+.help-item summary:focus-visible { outline: 3px solid var(--action); outline-offset: 2px; }
+.help-item[open] summary { border-bottom: 1px solid var(--line); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.help-body { padding: 12px 16px 16px; }
+.help-steps { margin: 0 0 12px; padding-left: 26px; display: grid; gap: 10px; font-size: 1rem; line-height: 1.6; }
+.help-steps li::marker { font-weight: 700; color: var(--action); }
+.help-note { margin: 0 0 12px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--blush-soft); font-size: 0.95rem; line-height: 1.55; }
+.help-note:empty { display: none; }
+.ui-btn { display: inline-block; padding: 1px 10px; border-radius: 999px; background: var(--action); color: #fff; font-weight: 600; font-size: 0.9em; line-height: 1.6; white-space: nowrap; }
+.ui-field { color: var(--green-text); }
+.help-steps .chip { margin-right: 6px; }
+.help-empty { padding: 16px; text-align: center; font-size: 1rem; }
+.help-more { margin-top: 18px; }
+.help-more p { font-size: 1rem; line-height: 1.6; margin: 6px 0 0; }
+@media (max-width: 560px) {
+  .help-item summary { font-size: 1rem; padding: 12px; }
+  .help-body { padding: 12px; }
+  .help-steps { padding-left: 22px; }
+  .help-quick .btn { flex: 1 1 140px; }
+  .ui-btn { white-space: normal; }
+}
+.help-item { scroll-margin-top: 96px; }
+@media (max-width: 800px) { .help-item { scroll-margin-top: 12px; } }

@@ -1482,6 +1482,7 @@
     back: '<path d="M19 12H5M12 19l-7-7 7-7"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 014.8 1c0 1.7-2.4 2.2-2.4 3.8"/><circle cx="12" cy="17.2" r="0.6" fill="currentColor"/>',
     edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>',
     camera: '<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>'
   };
@@ -1519,7 +1520,9 @@
     overlay.addEventListener('mousedown', function (e) { if (e.target === overlay) close(); });
     overlay.querySelector('[data-close]').addEventListener('click', close);
     var first = overlay.querySelector('input:not([type=hidden]),select,textarea,button.btn');
-    if (first) first.focus();
+    // Focus the first field without scrolling, so a tall dialog opens at its title on short screens.
+    if (first) { try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); } }
+    overlay.scrollTop = 0;
     return { el: overlay.querySelector('.modal'), body: overlay.querySelector('.modal-body'), close: close };
   };
   VZ.confirm = function (title, message, okLabel, danger) {
@@ -1638,21 +1641,36 @@
     pts.forEach(function (p, i) { path += (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.value).toFixed(1); });
     area = path + 'L' + x(pts.length - 1).toFixed(1) + ' ' + y(0) + 'L' + x(0).toFixed(1) + ' ' + y(0) + 'Z';
     svg += '<path d="' + area + '" fill="#ff5fa2" fill-opacity="0.12"/><path d="' + path + '" fill="none" stroke="#c8266f" stroke-width="2.5" stroke-linejoin="round"/>';
+    svg += '<line class="chart-guide" x1="0" x2="0" y1="' + m.t + '" y2="' + (m.t + ih) + '" stroke="#c8266f" stroke-width="1" stroke-dasharray="4 4" visibility="hidden"/>';
     var every = Math.ceil(pts.length / 7);
     pts.forEach(function (p, i) {
       svg += '<g class="chart-point" data-chart-point="' + i + '" tabindex="0" role="button" aria-label="' + VZ.esc(p.tip) + '">' +
         '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.value).toFixed(1) + '" r="12" fill="transparent"/>' +
-        '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.value).toFixed(1) + '" r="4" fill="#fff" stroke="#c8266f" stroke-width="2"/></g>';
+        '<circle class="chart-dot" cx="' + x(i).toFixed(1) + '" cy="' + y(p.value).toFixed(1) + '" r="4" fill="#fff" stroke="#c8266f" stroke-width="2"/></g>';
       if (i % every === 0 || i === pts.length - 1) svg += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 12) + '" text-anchor="middle">' + VZ.esc(p.label) + '</text>';
     });
     var tooltipId = (el.id || 'sales-chart') + '-tooltip';
     el.classList.add('chart-with-details');
-    el.innerHTML = svg + '</svg><div class="chart-tooltip" id="' + tooltipId + '" role="tooltip" hidden><div class="chart-tooltip-content"></div><button type="button" class="btn btn-ghost btn-sm" aria-label="Close sales details">Close</button></div>';
-    var tooltip = el.querySelector('.chart-tooltip'), pinned = false;
-    function hide() { tooltip.hidden = true; pinned = false; }
+    el.innerHTML = svg + '</svg><div class="chart-tooltip" id="' + tooltipId + '" role="tooltip" hidden><div class="chart-tooltip-content"></div></div>';
+    var tooltip = el.querySelector('.chart-tooltip'), pinned = false, guide = el.querySelector('.chart-guide'), lit = null;
+    function unlight() { if (lit) { lit.setAttribute('r', 4); lit.setAttribute('fill', '#fff'); lit = null; } guide.setAttribute('visibility', 'hidden'); }
+    function hide() { tooltip.hidden = true; pinned = false; unlight(); }
+    function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+    // Dashboard points carry a summary; any other chart falls back to its plain text.
+    function fill(p) {
+      var box = tooltip.querySelector('.chart-tooltip-content'), s = p.summary;
+      if (!s) { box.classList.add('plain'); box.textContent = p.tip + (p.details && p.details.length ? '\n\n' + p.details.join('\n\n') : '\nNo sales recorded for this date.'); return; }
+      box.classList.remove('plain');
+      box.innerHTML = '<div class="tip-head"><span class="tip-date">' + VZ.esc(s.date) + '</span><b class="tip-total">' + VZ.money(s.total) + '</b>' +
+        '<span class="tip-meta">' + plural(s.count, 'sale') + '</span></div>';
+    }
     function show(point, index) {
       var p = pts[index];
-      tooltip.querySelector('.chart-tooltip-content').textContent = p.tip + (p.details && p.details.length ? '\n\n' + p.details.join('\n\n') : '\nNo sales recorded for this date.');
+      fill(p);
+      unlight();
+      var dotEl = point.querySelector('.chart-dot');
+      if (dotEl) { dotEl.setAttribute('r', 6); dotEl.setAttribute('fill', '#c8266f'); lit = dotEl; }
+      guide.setAttribute('x1', x(index)); guide.setAttribute('x2', x(index)); guide.setAttribute('visibility', 'visible');
       tooltip.hidden = false;
       var dot = point.getBoundingClientRect(), margin = 8;
       var viewportWidth = document.documentElement.clientWidth, viewportHeight = window.innerHeight;
@@ -1662,6 +1680,9 @@
       tooltip.style.maxHeight = Math.max(0, Math.min(320, above >= 80 ? above : viewportHeight - margin * 2)) + 'px';
       tooltip.style.left = Math.max(margin, Math.min(dot.left + dot.width / 2 - tooltip.offsetWidth / 2, viewportWidth - tooltip.offsetWidth - margin)) + 'px';
       tooltip.style.top = Math.max(margin, Math.min(dot.top - tooltip.offsetHeight - margin, viewportHeight - tooltip.offsetHeight - margin)) + 'px';
+      var placedAbove = parseFloat(tooltip.style.top) + tooltip.offsetHeight <= dot.top;
+      tooltip.classList.toggle('above', placedAbove);
+      tooltip.style.setProperty('--arrow-x', Math.max(14, Math.min(tooltip.offsetWidth - 14, dot.left + dot.width / 2 - parseFloat(tooltip.style.left))) + 'px');
     }
     el.querySelectorAll('[data-chart-point]').forEach(function (point) {
       var index = Number(point.getAttribute('data-chart-point'));
@@ -1675,7 +1696,10 @@
         if (event.key === 'Escape') hide();
       });
     });
-    tooltip.querySelector('button').addEventListener('click', hide);
+    // A pinned tooltip closes when you click anywhere outside the chart (one listener per chart).
+    if (el._vzOutside) document.removeEventListener('click', el._vzOutside);
+    el._vzOutside = function (event) { if (!el.contains(event.target)) hide(); };
+    document.addEventListener('click', el._vzOutside);
     el.onpointerleave = function () { if (!pinned) hide(); };
     el.onkeydown = function (event) { if (event.key === 'Escape') hide(); };
   };
@@ -1705,7 +1729,8 @@
     { id: 'approvals', label: function (u) { return u.role === 'admin' ? 'Approvals' : 'My submissions'; }, href: 'approvals.html', icon: 'check' },
     { id: 'income', label: 'Income report', href: 'income.html', icon: 'chart', roles: ['admin'] },
     { id: 'staff', label: 'Staff accounts', href: 'staff.html', icon: 'users', roles: ['admin'] },
-    { id: 'profile', label: 'Profile', href: 'profile.html', icon: 'user' }
+    { id: 'profile', label: 'Profile', href: 'profile.html', icon: 'user' },
+    { id: 'help', label: 'Help', href: 'help.html', icon: 'help' }
   ];
   function bellHTML() {
     var all = VZ.notifications(), list = all.slice(0, 12), unread = all.filter(VZ.isUnread).length;
@@ -1753,14 +1778,15 @@
       var badge = '', waiting = n.id === 'staff' ? VZ.pendingCount() : n.id === 'approvals' ? VZ.pendingApprovalCount() : 0;
       if (waiting) badge = '<span class="nav-badge" aria-label="' + waiting + ' waiting">' + waiting + '</span>';
       var label = typeof n.label === 'function' ? n.label(user) : n.label;
-      return '<a href="' + n.href + '"' + (n.id === page ? ' aria-current="page"' : '') + '>' + VZ.icon(n.icon, 22) + '<span>' + label + '</span>' + badge + '</a>';
+      return '<a href="' + n.href + '" title="' + VZ.esc(label) + '"' + (n.id === page ? ' aria-current="page"' : '') + '>' + VZ.icon(n.icon, 22) + '<span class="nav-text">' + label + '</span>' + badge + '</a>';
     }).join('');
     var b = bellHTML();
     // Preserve the page's static HTML structure before building the shared application shell.
     var staticTemplate = document.getElementById('vz-static-page');
     document.getElementById('app').innerHTML =
       '<div class="app"><aside class="sidebar">' + VZ.logoHTML() +
-      '<div class="nav-label">Main menu</div><nav class="nav" aria-label="Main menu">' + nav + '</nav>' +
+      '<button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="main-nav">' + VZ.icon('grid', 18) + '<span>Menu</span>' + (nav.indexOf('nav-badge') >= 0 ? '<i class="menu-dot" aria-label="Items waiting"></i>' : '') + '</button>' +
+      '<div class="nav-label">Main menu</div><nav class="nav" id="main-nav" aria-label="Main menu">' + nav + '</nav>' +
       '<div class="sidebar-foot">VetZone VetCare System<br>Prototype</div></aside>' +
       '<div class="main-col"><header class="topbar"><div class="page-title"><span class="badge-ico">' + VZ.icon(opts.icon || 'grid', 26) + '</span><div><h1>' + VZ.esc(opts.title) + '</h1><p>' + VZ.esc(opts.subtitle || '') + '</p></div></div>' +
       '<div class="top-actions">' +
@@ -1781,17 +1807,43 @@
       });
     }
 
+    // Keeps an open menu fully on screen: full width just under its button on phones, and never taller than the space left.
+    function place(panel, btn) {
+      if (panel.hidden) return;
+      var r = btn.getBoundingClientRect(), phone = window.innerWidth <= 800;
+      if (phone) {
+        var top = Math.max(10, Math.min(r.bottom + 8, window.innerHeight - 180));
+        panel.style.top = top + 'px';
+        panel.style.maxHeight = Math.max(160, window.innerHeight - top - 10) + 'px';
+      } else {
+        panel.style.top = '';
+        panel.style.maxHeight = Math.max(200, window.innerHeight - r.bottom - 18) + 'px';
+      }
+    }
+    var wired = [];
     function wire(btnId, panelId, otherId) {
       var btn = document.getElementById(btnId), panel = document.getElementById(panelId);
+      wired.push([panel, btn]);
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var open = panel.hidden;
         document.getElementById(otherId).hidden = true;
         panel.hidden = !open;
         btn.setAttribute('aria-expanded', String(open));
+        place(panel, btn);
       });
     }
+    function placeOpen() { wired.forEach(function (x) { place(x[0], x[1]); }); }
+    window.addEventListener('resize', placeOpen);
+    window.addEventListener('scroll', placeOpen, { passive: true });
     wire('bell-btn', 'bell-panel', 'user-menu');
+    // Phones: the menu stays folded behind the Menu button until it is opened.
+    var menuBtn = document.getElementById('menu-toggle'), sidebar = menuBtn && menuBtn.closest('.sidebar');
+    if (menuBtn) {
+      var setMenu = function (open) { sidebar.classList.toggle('menu-open', open); menuBtn.setAttribute('aria-expanded', String(open)); menuBtn.querySelector('span').textContent = open ? 'Close' : 'Menu'; };
+      menuBtn.addEventListener('click', function () { setMenu(!sidebar.classList.contains('menu-open')); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sidebar.classList.contains('menu-open')) { setMenu(false); menuBtn.focus(); } });
+    }
     // Opening the bell shows what is new, then marks everything as read.
     document.getElementById('bell-btn').addEventListener('click', function () {
       if (document.getElementById('bell-panel').hidden) return;
@@ -1810,4 +1862,60 @@
     VZ.showFlash();
     return { user: user, main: document.getElementById('main') };
   };
+})();
+
+
+/* Phones show each table row as a small card. Each cell gets its column name as a label
+   (data-label), taken from the table header. Runs again whenever a page redraws its tables. */
+(function () {
+  'use strict';
+  // Only in a real browser page (the data-only checks run this file without a page).
+  if (typeof window === 'undefined' || typeof document === 'undefined' || typeof MutationObserver === 'undefined' || !window.VZ) return;
+  function labelTables(root) {
+    root.querySelectorAll('table.table').forEach(function (table) {
+      var headRow = table.tHead && table.tHead.rows[table.tHead.rows.length - 1];
+      if (!headRow) return;
+      var names = [];
+      Array.prototype.forEach.call(headRow.cells, function (th) {
+        var span = th.colSpan || 1, text = th.textContent.replace(/\s+/g, ' ').trim();
+        for (var i = 0; i < span; i++) names.push(text);
+      });
+      var bodies = Array.prototype.slice.call(table.tBodies);
+      if (table.tFoot) bodies.push(table.tFoot);
+      bodies.forEach(function (body) {
+        Array.prototype.forEach.call(body.rows, function (row) {
+          var col = 0;
+          Array.prototype.forEach.call(row.cells, function (cell) {
+            var span = cell.colSpan || 1;
+            if (span > 1 && row.cells.length === 1) cell.classList.add('cell-full');
+            else if (!cell.hasAttribute('data-label')) cell.setAttribute('data-label', names[col] || '');
+            col += span;
+          });
+        });
+      });
+    });
+  }
+  // A table that does not fit its space is shown as cards, at any screen size. Tables that fit stay normal tables.
+  function fitTables(root) {
+    root.querySelectorAll('table.table').forEach(function (table) {
+      var wrap = table.closest('.table-wrap') || table.parentElement;
+      if (!wrap || !table.getClientRects().length) return;      // hidden (for example, an inactive tab): check it when it is shown
+      table.classList.remove('as-cards'); wrap.classList.remove('cards-wrap');
+      var tooWide = table.scrollWidth > wrap.clientWidth + 1 || window.innerWidth <= 640;
+      table.classList.toggle('as-cards', tooWide); wrap.classList.toggle('cards-wrap', tooWide);
+    });
+  }
+  window.VZ.fitTables = function () { fitTables(document); };
+  var queued = false;
+  function run() { queued = false; labelTables(document); fitTables(document); }
+  function queue() { if (!queued) { queued = true; requestAnimationFrame(run); } }
+  function start() {
+    run();
+    new MutationObserver(queue).observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('resize', queue);
+    // Measure again once the page and its font have finished loading, since text width changes.
+    window.addEventListener('load', queue);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(queue);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

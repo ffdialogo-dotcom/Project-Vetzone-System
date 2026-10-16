@@ -83,7 +83,9 @@
         var dt = VZ.parse(d);
         pts.push({ label: dt.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }), value: a.net,
           tip: VZ.fmtDate(d) + '\n' + a.n + ' sale' + (a.n === 1 ? '' : 's') + ' · ' + a.items + ' item' + (a.items === 1 ? '' : 's') + '\nTotal: ' + VZ.money(a.net),
-          details: dailySales.map(function (s) { return s.no + ' · ' + VZ.money(s.total) + ' · ' + s.method + '\n' + s.items.map(function (l) { return l.qty + ' × ' + l.name; }).join(', '); })
+          details: dailySales.map(function (s) { return s.no + ' · ' + VZ.money(s.total) + ' · ' + s.method + '\n' + s.items.map(function (l) { return l.qty + ' × ' + l.name; }).join(', '); }),
+          summary: { date: VZ.fmtDate(d), total: a.net, count: a.n, items: a.items,
+            sales: dailySales.map(function (s) { return { no: s.no, total: s.total, method: s.method, lines: s.items.map(function (l) { return l.qty + ' × ' + l.name; }).join(', ') }; }) }
         });
       }
       VZ.lineChart(document.getElementById('sales-chart'), pts, 'Daily sales for the last ' + days + ' days');
