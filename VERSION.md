@@ -1,3 +1,14 @@
+# V25
+
+Based on the user's uploaded final V24. Adds two sign-in states in the existing login layout: admin MFA verification and the staff clinic-network restriction with Try again. The original V24 archive and application are preserved on branch V24; this update is on branch V25.
+
+- Six-digit code input supports paste, leading zeros, Enter and mobile numeric keyboards. Verify, delivery-channel resend, cooldown, expiry, rate-limit/error and Back states are ready for server responses. Authenticator codes do not show Resend.
+- Staff network denial includes a clear explanation, Try again and Back. The server must recheck an opaque retry token; when no retry token is available, Try again returns to cleared credentials. Passwords are not retained for network retries.
+- Pending actions disable duplicate submissions. Responses arriving after Back are ignored. Password/code fields and in-memory challenge state are cleared on exit. No code, challenge or retry token is written to browser storage or the URL.
+- Separate, clearly labeled previews under the demo accounts allow both screens to be reviewed now. They send no codes and grant no access. The existing prototype demo login remains available.
+- Future backend responses drive the new states through the documented adapter. Backend mode never falls back to local demo authentication; session/bootstrap completion belongs to the backend integration. Real MFA and network enforcement are not implemented in this frontend release.
+- Existing V24 features and pink/green design are retained. No backend, SMS/email provider or production deployment is added.
+
 # V24
 
 V24 adds a Help page as the last item in the main menu.

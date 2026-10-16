@@ -3,6 +3,10 @@
 Use separate admin and staff demo accounts. Test in a fresh browser profile and with existing sample data.
 
 - [ ] Login/logout and invalid login; session behavior
+- [ ] V25 preview: MFA code input, Verify/Resend errors, Back; no code sent or access granted
+- [ ] V25 preview: Clinic network required, repeated Try again and Back; no access granted
+- [ ] Backend adapter tests: pending/duplicate/stale responses, code expiry/cooldown/rate limits, no local demo fallback
+- [ ] Before backend release: real delivery/enrollment/recovery, secure session and every protected-page/API network/role rule
 - [ ] Sidebar navigation, header, notification badge, responsive layout
 - [ ] Dashboard metrics, charts, recent activity, empty states
 - [ ] Inventory search, filter, create/edit, stock quantity, expired batches

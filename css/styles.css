@@ -326,6 +326,17 @@ body.modal-open { overflow: hidden; }
 .demo-box { border: 2px dashed var(--rose); border-radius: var(--radius-sm); padding: 12px; font-size: 0.85rem; color: var(--muted); }
 .demo-box b { color: var(--ink); }
 .demo-box button { margin-top: 6px; }
+.login-form-side > *, .login-form-side section { min-width: 0; }
+.login-instructions { margin-bottom: 18px; overflow-wrap: anywhere; }
+.login-preview-note { border: 1px dashed var(--rose-deep); border-radius: var(--radius-sm); padding: 10px 12px; }
+.login-secondary-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.login-secondary-actions > button { flex: 1 1 140px; }
+.login-code { letter-spacing: 0.15em; font-variant-numeric: tabular-nums; }
+.login-preview-links { margin-top: 10px; }
+.login-preview-links summary { cursor: pointer; }
+.login-preview-links a { display: block; padding-top: 8px; overflow-wrap: anywhere; }
+#mfa-status:empty, #network-status:empty, #mfa-timing:empty { display: none; }
+#network-panel > button { margin-top: 12px; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1100px) {

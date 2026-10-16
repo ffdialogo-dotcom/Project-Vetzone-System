@@ -1,3 +1,50 @@
+V25 verification (October 16, 2026)
+
+Source: the user's final uploaded V24_VetZone.zip. All 65 uploaded source
+files match the preserved V24 baseline commit byte for byte. The original
+V24 ZIP is retained unchanged (SHA-256:
+54793fc6501ff55528796efdcf667cedb6eee54c304f6340ffbc6b62adf0a415).
+
+PASS: all 23 current suites: the 22 original V24 suites (13 data/static,
+9 Chromium browser) plus tests/check-login-security-browser.js.
+
+The new login suite passes 26 grouped scenarios and covers prototype sign-in; honest MFA/network previews;
+actual clipboard paste, leading zeros and Enter; server-adapter transitions;
+wrong/malformed codes; expiry, cooldown, resend and rate limits; authenticator
+without resend; pending/duplicate requests; stale responses after Back;
+repeated network denial and opaque retry tokens; missing-token fresh sign-in;
+no session before authentication; explicit secure-session handoff; missing,
+rejected and malformed adapters; malformed challenges/cooldowns; refresh,
+sensitive-state nonpersistence, existing prototype sessions and cancellation
+when browser history changes are restricted. No preview/backend flow calls
+the local demo login or creates a prototype session. No browser errors.
+
+PASS: 115 login state/layout checks across widths 320, 375, 768, 1024, 1280.
+36 screenshots captured; mobile and desktop views inspected. Normal login,
+MFA/network previews, long email destinations, SMS, authenticator, invalid
+code, missing-adapter and unavailable states fit without horizontal overflow.
+Visible enabled controls are clickable; hidden panels are unfocusable;
+Back restores username focus and clears code/password state.
+
+PASS: Help retains 20 staff / 24 admin topics and 3 / 4 quick actions.
+Search, empty state, direct topic links, Go to links and nonmutation pass.
+105 existing role/page/width combinations pass with no horizontal overflow,
+missing table labels, overlay-bounds failures or uncaught page errors.
+
+PASS: JavaScript syntax/local asset checks and git diff --check.
+Existing app.js, workflow data, medical/inventory/sales logic and stored-data
+formats are unchanged from the uploaded V24.
+
+Browser checks use isolated Chromium profiles and a local HTTP server;
+optional Google font requests are blocked to exercise fallback fonts.
+Direct file:// navigation could not be checked because the environment's
+managed Chromium policy blocks file URLs. Other browsers were not tested.
+Adapters in tests are isolated mocks. No real code delivery, secure session,
+clinic-network enforcement, backend, database or production deployment is
+claimed by these frontend checks. See LOGIN_SECURITY_INTEGRATION.md.
+
+Earlier verification retained below:
+
 V24 verification
 
 PASS: all 22 checks in tests/.

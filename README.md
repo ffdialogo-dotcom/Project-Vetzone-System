@@ -1,6 +1,16 @@
-# V17 — VetZone VetCare System: Working Prototype
+# V25 — VetZone VetCare System: Working Prototype
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
+
+## Login security screens (V25, based on the uploaded V24)
+
+V25 adds an MFA code step with Verify, Resend (email/SMS), expiry/error messages and Back, plus a **Clinic network required** screen with **Try again** for staff. These use the existing login layout and colors; there are no extra dashboard controls.
+
+Open `index.html` and expand **Preview login security screens** under the demo accounts. You can also open `index.html?preview=mfa` or `index.html?preview=clinic-network`. Preview actions never send a code or grant access. Normal demo sign-in still opens the browser-local prototype. All V24 clinic pages, Help topics, account creation and existing records logic are retained.
+
+Real code delivery, code verification, staff network blocking and secure shared sessions still require the backend. The OTP delivery channel has not been selected. The integration hooks and server policy are documented in [LOGIN_SECURITY_INTEGRATION.md](LOGIN_SECURITY_INTEGRATION.md). Changing the login configuration alone cannot secure the current browser-storage app.
+
+The original uploaded archive is preserved unchanged as `versions/V24_VetZone.zip` on its own V24 branch; V25 is a separate branch and archive.
 
 ## Clinic calendar connected to pet due dates (V17)
 

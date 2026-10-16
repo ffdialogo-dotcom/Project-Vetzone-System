@@ -27,7 +27,9 @@
   </section>
   <section class="login-form-side">
     <a class="logo" href="index.html" aria-label="VetZone"><img class="logo-img" src="img/vetzone-logo.png" alt="VetZone logo"><span class="logo-text"><span class="vet">VET</span><span class="zone">ZONE</span></span></a>
-    <h1>Sign in</h1>
+    <h1 id="login-heading" tabindex="-1">Sign in</h1>
+    <p class="login-preview-note caption" id="security-preview-note" hidden>Screen preview only. No codes are sent and no access is granted.</p>
+    <p id="login-status" class="caption" role="status" aria-live="polite" hidden></p>
     <form id="login-form" novalidate>
       <div id="login-error" class="form-error" role="alert" hidden></div>
       <label class="field"><span>Username</span>
@@ -43,12 +45,41 @@
       <a class="btn btn-ghost btn-block" id="create-link" href="create-account.html" style="margin-top:10px">Create account</a>
       <p class="caption">Forgot your password? Ask the clinic admin to reset it. New accounts must be approved by the admin before they can sign in.</p>
     </form>
-    <div class="demo-box">
+    <section id="mfa-panel" aria-labelledby="login-heading" hidden>
+      <p class="login-instructions" id="mfa-instructions"></p>
+      <form id="mfa-form" novalidate>
+        <div id="mfa-error" class="form-error" role="alert" hidden></div>
+        <p id="mfa-status" class="caption" role="status" aria-live="polite"></p>
+        <label class="field"><span>Verification code</span>
+          <input class="input login-code" id="mfa-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" aria-describedby="mfa-instructions mfa-timing" required>
+        </label>
+        <p id="mfa-timing" class="caption"></p>
+        <button id="verify-code" class="btn btn-block" type="submit">Verify code</button>
+        <div class="login-secondary-actions">
+          <button id="resend-code" class="btn btn-ghost" type="button">Resend code</button>
+          <button id="mfa-back" class="btn btn-ghost" type="button">Back to sign in</button>
+        </div>
+      </form>
+      <p class="caption">Never share a verification code. If you cannot verify your account, contact the clinic admin.</p>
+    </section>
+    <section id="network-panel" aria-labelledby="login-heading" hidden>
+      <p class="login-instructions">Staff accounts can only access this system through the clinic’s approved network. Connect to the clinic Wi-Fi and try again. If you are already connected, contact the admin.</p>
+      <div id="network-error" class="form-error" role="alert" hidden></div>
+      <p id="network-status" class="caption" role="status" aria-live="polite"></p>
+      <button id="network-retry" class="btn btn-block" type="button">Try again</button>
+      <button id="network-back" class="btn btn-ghost btn-block" type="button">Back to sign in</button>
+    </section>
+    <div class="demo-box" id="demo-accounts">
       <b>Prototype demo accounts</b><br>
       Admin: <b>admin</b> / admin123<br>
       Staff: <b>staff1</b> / staff123<br>
       <button type="button" class="btn btn-ghost btn-sm" id="fill-admin">Fill in admin</button>
       <button type="button" class="btn btn-ghost btn-sm" id="fill-staff">Fill in staff</button>
+      <p class="caption">Demo access uses this browser’s data. Real MFA and clinic-network restrictions need the backend.</p>
+      <details class="login-preview-links"><summary>Preview login security screens</summary>
+        <a href="index.html?preview=mfa">MFA verification</a>
+        <a href="index.html?preview=clinic-network">Clinic network required</a>
+      </details>
     </div>
   </section>
 </main>
@@ -56,6 +87,7 @@
 <script src="js/app.js"></script>
 <script src="js/workflow-data.js"></script>
 <script src="js/workflow-ui.js"></script>
+<script src="js/login-config.js"></script>
 <script src="js/login.js"></script>
 </body>
 </html>

@@ -2,6 +2,8 @@
 
 The current prototype uses browser-side storage and client-side role checks. Do not deploy it for real patient, staff or business records without backend work.
 
+V25 supplies the MFA and clinic-network login screens and a server-adapter interface; see [LOGIN_SECURITY_INTEGRATION.md](LOGIN_SECURITY_INTEGRATION.md). Admin access outside the trusted clinic network requires MFA; staff access outside it is denied. Admins inside may skip MFA under server policy. The server must determine role and trusted network, enforce limits, and recheck protected requests. The frontend previews and demo login do not enforce this policy.
+
 ## Architecture
 - Serve existing HTML/CSS/JS as static files from Express.
 - Use authenticated `/api/*` endpoints returning JSON; handle errors consistently.
