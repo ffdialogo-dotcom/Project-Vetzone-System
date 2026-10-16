@@ -239,6 +239,9 @@ const http = require('node:http');
       return { demoted: demoted.ok, created: created.ok, saved: localStorage.getItem('vz_proto_db_v1') };
     }, addedAdmin.id);
     assert.equal(otherTabChanges.demoted, true); assert.equal(otherTabChanges.created, true);
+    // A completed write in one renderer can precede its visibility in another.
+    // Observe the saved-data precondition without refreshing this form's VZ.db.
+    await page.waitForFunction(saved => localStorage.getItem('vz_proto_db_v1') === saved, otherTabChanges.saved);
     assert.equal(await page.evaluate(() => VZ.currentUser().role), 'admin', 'The open form must still have its old in-memory role for this regression');
     const staleDemotion = await page.evaluate(() => {
       const before = JSON.stringify(VZ.db);
@@ -273,6 +276,8 @@ const http = require('node:http');
       return { ok: result.ok, productId: product.id, before, after: VZ.info(product).sellable, saved: localStorage.getItem('vz_proto_db_v1') };
     });
     assert.equal(stockChange.ok, true); assert.equal(stockChange.after, stockChange.before + 2);
+    await page.waitForFunction(saved => localStorage.getItem('vz_proto_db_v1') === saved, stockChange.saved);
+    assert.equal(await page.evaluate(id => VZ.info(VZ.findProduct(id)).sellable, stockChange.productId), stockChange.before, 'The form must retain its stale stock snapshot after the saved change is observable');
     const staleStock = await page.evaluate(() => {
       const before = JSON.stringify(VZ.db);
       const result = VZ.addUser({ name: 'Stock Refresh Staff', username: 'stock_refresh', password: 'Stock12345', role: 'staff' });

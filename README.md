@@ -8,7 +8,7 @@ Public registration is removed from the login page. New staff ask the clinic adm
 
 Opening `create-account.html` while signed out returns to sign-in; staff return to their dashboard. The form is hidden until the admin check completes. The former public registration operation refuses new requests without changing saved data. Existing accounts and pending requests from earlier versions are retained; the admin can still approve or reject those older requests.
 
-If the saved data changes while an admin's account form is open, creating an account asks for a page reload rather than overwriting the newer data. An account whose saved role/access changed cannot create accounts from a stale form.
+Account creation compares the form's data and admin access with the saved data currently visible to that browser tab. Once another tab's update is visible, an outdated form asks for a reload. Browser storage is not an atomic multiuser transaction; the backend must enforce account permissions and shared-data consistency before real clinic use.
 
 V25's MFA and clinic-network screens, previews, integration hooks and all clinic features remain. The layout and colors are unchanged. V25 is preserved on its own branch with its original ZIP; V26 has a separate branch and ZIP.
 

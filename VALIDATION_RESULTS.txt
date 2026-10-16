@@ -16,9 +16,13 @@ New staff can sign in but cannot create accounts. Legacy pending accounts
 remain until explicit admin approval/rejection. Removing a session or changing
 roles after opening the form prevents creation. Modeled pagehide/pageshow
 restoration clears temporary passwords and reloads before revealing a form.
-Real two-tab checks verify stale roles cannot create or overwrite newer
-accounts, and newer stock changes survive stale account submissions. Explicit
-reload permits authorized creation while retaining the latest saved data.
+After storage updates become visible in the other tab, real two-tab checks
+verify that stale in-memory roles cannot create or overwrite newer accounts,
+and newer stock changes survive stale account submissions. The tests wait for
+that storage propagation before checking the old form. Browser storage is not
+an atomic transaction; changes not yet visible in a tab require backend
+permissions/transactions for reliable multiuser enforcement. Explicit reload
+permits authorized creation while retaining the latest saved data.
 No uncaught browser errors.
 
 PASS: unchanged V25 login security browser suite, all 26 grouped scenarios.
