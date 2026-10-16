@@ -2,6 +2,8 @@
 
 V25 adds frontend states for an MFA code and access from the clinic network. The default remains the existing browser prototype, with demo login and the existing application flows. These screens prepare a backend integration; changing the configuration alone does not secure the application.
 
+V26 retains this contract and both screens. Public registration is closed: new accounts are created by admins under Staff accounts. The backend must enforce admin-only account creation, disable public signup, and preserve existing accounts and legacy pending decisions.
+
 ## Preview and prototype
 
 - `index.html?preview=mfa` previews the code screen.

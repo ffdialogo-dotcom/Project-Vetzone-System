@@ -73,7 +73,6 @@
     el('mfa-panel').hidden = next !== 'mfa';
     el('network-panel').hidden = next !== 'network';
     el('demo-accounts').hidden = !prototype || preview || next !== 'login';
-    el('create-link').hidden = !prototype;
     el('security-preview-note').hidden = !preview;
     el('login-heading').textContent = next === 'mfa' ? 'Verify your sign in' : next === 'network' ? 'Clinic network required' : next === 'complete' ? 'Signing in' : 'Sign in';
     controls();

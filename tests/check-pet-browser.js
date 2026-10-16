@@ -111,10 +111,11 @@ const http=require('node:http');
     assert.equal(await page.evaluate(id=>VZ.db.petStatusRequests.filter(r=>r.petId===id).length,third),0);
     observations.preBirthDateRejectedThroughUI=true;
     await page.locator('#death-request-form [data-cancel]').click();
-    await logout();await open('create-account.html');assert.equal(await page.locator('#create-form').isVisible(),true);
+    await logout();await open('create-account.html');await page.waitForURL('**/index.html');assert.equal(await page.locator('#create-form').isVisible(),false);
+    observations.loggedOutCreateAccountRedirected=true;
     assert.deepEqual(errors,[]);
     observations.browserErrors=errors;observations.functionalChecks='PASS';
-    console.log('PASS: browser login and role views, staff/item ID rendering, pending deceased requests, staff restriction, duplicate guard, admin approval/rejection, rejection-note validation, reload persistence, preserved history, reminder suppression, deceased filtering, all application pages.');
+    console.log('PASS: browser login and role views, staff/item ID rendering, pending deceased requests, staff restriction, duplicate guard, admin approval/rejection, rejection-note validation, reload persistence, preserved history, reminder suppression, deceased filtering, all application pages, logged-out account-creation redirect.');
     console.log('EDGE OBSERVATIONS:',JSON.stringify(observations));
     await context.close();
   } finally {if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}

@@ -1,3 +1,14 @@
+# V26
+
+Based on V25. Public signup is removed; the admin creates new team accounts through Staff accounts. The existing design, clinic workflows and V25 MFA/network login states are retained.
+
+- No Create account link or public-request instructions on sign-in, including after returning from either security screen.
+- The account form is admin-only, starts hidden, and checks access again on submission. Signed-out visitors return to sign-in; staff return to their dashboard. Cached account forms reload on restore to use current saved roles; temporary passwords clear when leaving.
+- The former public registration operation refuses all submissions without changing accounts, IDs, pending requests, activity, audit or saved data. Admin creation, role choices, password resets, account controls and existing legacy approvals remain available.
+- Account creation checks the latest saved admin access and refuses stale data, asking for a reload instead of overwriting newer records. This is a prototype safeguard; server transactions and permissions still belong to the backend.
+- Help and current documentation describe admin-created accounts. No existing data is deleted or converted, and no data reset is required.
+- V25 and its original archive remain unchanged. V26 is saved separately. Real MFA delivery, secure sessions and clinic-network rules still require the backend, as in V25.
+
 # V25
 
 Based on the user's uploaded final V24. Adds two sign-in states in the existing login layout: admin MFA verification and the staff clinic-network restriction with Try again. The original V24 archive and application are preserved on branch V24; this update is on branch V25.

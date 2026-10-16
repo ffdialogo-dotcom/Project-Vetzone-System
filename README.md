@@ -1,12 +1,22 @@
-# V25 — VetZone VetCare System: Working Prototype
+# V26 — VetZone VetCare System: Working Prototype
 
 A clickable, working prototype built from the Figma design, with the official VetZone logo. Plain HTML, CSS, and JavaScript. No install and no internet needed (the Poppins font falls back to a system font when offline).
+
+## Admin-created accounts (V26)
+
+Public registration is removed from the login page. New staff ask the clinic admin for an account. The admin signs in, opens **Staff accounts > Create account**, fills in the details and confirms. Admin-created accounts are active immediately; staff should change their temporary password in **Profile**.
+
+Opening `create-account.html` while signed out returns to sign-in; staff return to their dashboard. The form is hidden until the admin check completes. The former public registration operation refuses new requests without changing saved data. Existing accounts and pending requests from earlier versions are retained; the admin can still approve or reject those older requests.
+
+If the saved data changes while an admin's account form is open, creating an account asks for a page reload rather than overwriting the newer data. An account whose saved role/access changed cannot create accounts from a stale form.
+
+V25's MFA and clinic-network screens, previews, integration hooks and all clinic features remain. The layout and colors are unchanged. V25 is preserved on its own branch with its original ZIP; V26 has a separate branch and ZIP.
 
 ## Login security screens (V25, based on the uploaded V24)
 
 V25 adds an MFA code step with Verify, Resend (email/SMS), expiry/error messages and Back, plus a **Clinic network required** screen with **Try again** for staff. These use the existing login layout and colors; there are no extra dashboard controls.
 
-Open `index.html` and expand **Preview login security screens** under the demo accounts. You can also open `index.html?preview=mfa` or `index.html?preview=clinic-network`. Preview actions never send a code or grant access. Normal demo sign-in still opens the browser-local prototype. All V24 clinic pages, Help topics, account creation and existing records logic are retained.
+Open `index.html` and expand **Preview login security screens** under the demo accounts. You can also open `index.html?preview=mfa` or `index.html?preview=clinic-network`. Preview actions never send a code or grant access. Normal demo sign-in still opens the browser-local prototype. All V24 clinic pages, Help topics, admin account creation and existing records logic are retained.
 
 Real code delivery, code verification, staff network blocking and secure shared sessions still require the backend. The OTP delivery channel has not been selected. The integration hooks and server policy are documented in [LOGIN_SECURITY_INTEGRATION.md](LOGIN_SECURITY_INTEGRATION.md). Changing the login configuration alone cannot secure the current browser-storage app.
 
@@ -96,7 +106,7 @@ Approved deceased status preserves medical history and suppresses routine remind
 | Staff | staff1   | staff123 |
 
 ## Roles
-**Admin** can: change the official inventory directly, review and approve or reject staff inventory changes and pet medical history entries, delete individual medical history entries, edit approved entries, see income, create accounts, approve or reject account requests, and change roles between Staff and Admin.
+**Admin** can: change the official inventory directly, review and approve or reject staff inventory changes and pet medical history entries, delete individual medical history entries, edit approved entries, see income, create accounts, approve or reject legacy account requests, and change roles between Staff and Admin.
 
 **Staff** can: record sales, add pets, and **submit** inventory changes and medical history entries for admin approval. They see the status of everything they submitted. They cannot approve their own submissions, edit approved entries, delete entries, see income, or manage accounts.
 
@@ -114,7 +124,7 @@ Approved deceased status preserves medical history and suppresses routine remind
 - **Review.** The admin sees who sent it, when, the item, the change (before and after), and the reason. Approve applies it once. Reject needs a note and changes nothing. A request cannot be processed twice, an identical pending request cannot be sent twice, and an approval is checked again against today's records (for example, a name that now clashes is not applied).
 - **Medical history.** A staff entry (visit or vaccination) is marked Pending Admin Approval. Only **approved** entries appear as finalized history and count toward visit totals and reminders. Rejected entries stay out and show the admin's note. Staff can fix their own pending or rejected entry, which sends it back for approval.
 - **Deleting.** Only an admin can delete a medical entry, one entry at a time, after a confirmation. The pet's profile and its other entries stay.
-- **Roles.** Only an admin can change a role, must type their own password, cannot change their own role, and the last active admin cannot be demoted or turned off. The sign-up page has no role choice: sign-ups are always Staff and wait for approval.
+- **Roles and account creation.** Only admins can create accounts. Public signup is closed. Pending requests from earlier versions remain reviewable. Only an admin can change a role, must type their own password, cannot change their own role, and the last active admin cannot be demoted or turned off.
 - **Audit trail.** Submissions, approvals, rejections, deletions, edits, account approvals, and role changes are recorded with who and when (Approvals page, "Audit trail").
 
 ## Notifications (the bell)
@@ -131,7 +141,7 @@ Data lives in this browser (localStorage), and there is no server or database ye
 - Secure password hashes (Argon2id or bcrypt), parameterized SQL, secure sessions, and HTTPS.
 
 ## Other features
-Sign in with a **Create account** button (and a **Log in** button on the Create account page); admin approval of account requests; Profile (details, picture, password); Top sellers; Record sales (stock is deducted automatically); Inventory with batches, expiry dates, and alerts; Pet records with visit history; Income report (admin).
+Sign in with an admin-created account; admin account creation through **Staff accounts**, with approval of legacy account requests retained; Profile (details, picture, password); Top sellers; Record sales (stock is deducted automatically); Inventory with batches, expiry dates, and alerts; Pet records with visit history; Income report (admin).
 
 ## Reset before a demo
 Staff accounts page, "Reset demo data". Existing browser data migrates automatically. Reset only if you intentionally want to replace it with fresh demo data.

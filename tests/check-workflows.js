@@ -29,11 +29,21 @@ assert.equal(V.changeRole(staff.id, 'staff', 'admin123').ok, true); assert.match
 assert.notEqual(staff.displayId, staffId); assert.equal(staff.id, 'u2', 'Internal account ID must stay unchanged');
 assert.equal(V.addUser({ name: 'New Admin', username: 'newadmin', role: 'admin', password: 'testpass123' }).ok, true);
 assert.match(V.db.users.find(u => u.username === 'newadmin').displayId, /^ADM-/);
-assert.equal(V.register({ name: 'Pending Staff', username: 'pendingstaff', password: 'testpass123' }).ok, true);
-const first = V.db.users.find(u => u.username === 'pendingstaff'), assigned = first.displayId;
+const publicState = load(), publicDB = JSON.stringify(publicState.V.db), publicStorage = JSON.stringify([...publicState.memory]);
+assert.equal(publicState.V.register({ name: 'Pending Staff', username: 'pendingstaff', password: 'testpass123' }).ok, false);
+assert.equal(JSON.stringify(publicState.V.db), publicDB, 'Public registration must not mutate the database');
+assert.equal(JSON.stringify([...publicState.memory]), publicStorage, 'Public registration must not mutate storage');
+function legacyPending(name, username) {
+  const user = Object.assign({}, staff, { id: V.uid('u'), displayId: V.nextDisplayId(V.db.users, 'STF'), name, username, passHash: V.hash(username, 'testpass123'), active: false, pending: true, created: V.today(), seen: {} });
+  V.db.users.push(user); V.save(); return user;
+}
+const first = legacyPending('Pending Staff', 'pendingstaff'), assigned = first.displayId;
 assert.equal(V.rejectUser(first.id).ok, true);
-assert.equal(V.register({ name: 'Another Staff', username: 'anotherstaff', password: 'testpass123' }).ok, true);
-assert.notEqual(V.db.users.find(u => u.username === 'anotherstaff').displayId, assigned, 'Rejected IDs must not be reused');
+assert.equal(V.db.users.some(u => u.id === first.id), false);
+const second = legacyPending('Another Staff', 'anotherstaff'), approvedId = second.displayId;
+assert.notEqual(approvedId, assigned, 'Rejected IDs must not be reused');
+assert.equal(V.approveUser(second.id).ok, true);
+assert.equal(second.pending, false); assert.equal(second.active, true); assert.equal(second.displayId, approvedId);
 V.save();
 const restored = load(state.memory).V;
 assert.equal(JSON.stringify(restored.db.users), JSON.stringify(V.db.users), 'Role IDs persist on reload');
@@ -70,4 +80,4 @@ assert.equal(reloadedCash.change, 14.09); assert.equal(reloadedCash.cashReceived
 assert.equal(C.cashPayment(19.95, 19.95).change, 0);
 assert.equal(C.cashPayment(0, 0).change, 0);
 C.resetDemo(); assert.ok(C.db.petStatusRequests); assert.match(C.db.users[0].displayId, /^ADM-/);
-console.log('PASS: direct admin deceased status, staff approval restriction, distinct role IDs and migration, persistent ID sequences, non-mutating sale review, cash validation/change, final stock deduction, online payment and reload persistence.');
+console.log('PASS: direct admin deceased status, staff approval restriction, distinct role IDs and migration, denied public registration without mutation, legacy account approval/rejection, persistent ID sequences, non-mutating sale review, cash validation/change, final stock deduction, online payment and reload persistence.');

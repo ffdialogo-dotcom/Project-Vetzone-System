@@ -179,7 +179,7 @@
       'Open ' + f('Staff accounts') + ' and tap ' + b('Create account') + '.',
       'Fill in the person\'s ' + f('Full name') + ', ' + f('Username') + ', and ' + f('Password') + ', and choose the ' + f('Role account') + '.',
       'Tap ' + b('Confirm') + '.',
-      'When someone asks for an account from the sign-in page, they show as Waiting for approval on ' + f('Staff accounts') + '. Tap ' + b('Approve') + ' or ' + b('Reject') + '.'
+      'Give the staff member their username and temporary password. Ask them to change their password in ' + f('Profile') + '.'
     ] },
     { group: 'For the admin', id: 'resetpw', q: 'A staff member forgot their password.', go: ['staff.html', 'Staff accounts'], steps: [
       'Open ' + f('Staff accounts') + '.',

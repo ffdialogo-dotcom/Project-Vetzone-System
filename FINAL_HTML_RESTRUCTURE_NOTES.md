@@ -1,5 +1,7 @@
 # VetZone HTML restructuring — completion notes
 
+Historical notes from the earlier restructuring. V26 removes the guest registration flow; account creation is now admin-only. Current test results are in VALIDATION_RESULTS.txt.
+
 Converted the remaining three pages: pet.html, profile.html, create-account.html.
 
 - Main headings, controls, forms and fixed layout are now written directly in HTML.

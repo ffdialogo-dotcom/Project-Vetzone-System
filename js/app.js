@@ -1263,7 +1263,7 @@
     if (o.idNumber.length > 30) err.idNumber = 'Keep the ID number under 30 characters.';
     return o;
   }
-  // Shared by the admin's Create account and by self-service sign-up.
+  // Account builder used by the admin's Create account form.
   function createUser(d, role, pending) {
     var err = {}, name = String(d.name || '').trim(), uname = String(d.username || '').trim();
     if (!name) err.name = 'Enter the full name.';
@@ -1283,6 +1283,15 @@
   VZ.addUser = function (d) {
     var me = actor(); if (!me) return needSignIn();
     if (!VZ.can('users.manage')) return denied('Only an admin can create accounts here.');
+    // An open account form must not reuse an old role or overwrite newer data.
+    var latest = loadDB();
+    var savedUser = latest && Array.isArray(latest.users) && latest.users.filter(function (u) { return u.id === me.id; })[0];
+    if (!savedUser || !savedUser.active || savedUser.pending || savedUser.role !== 'admin') {
+      return denied('Your account access has changed. Reload this page and sign in again.');
+    }
+    if (JSON.stringify(latest) !== JSON.stringify(VZ.db)) {
+      return { ok: false, error: 'Saved data changed. Reload this page before creating an account.' };
+    }
     var r = createUser(d, d.role, false);
     if (!r.ok) return r;
     VZ.log('staff', 'Created ' + d.role + ' account for ' + r.user.name, me);
@@ -1290,17 +1299,12 @@
     VZ.save();
     return { ok: true };
   };
-  // Self-service sign-up from the sign-in page. Always a staff account that waits for the admin to approve it.
-  // There is no role in the request: the role cannot be chosen here.
+  // Keep legacy pending requests reviewable. New accounts are created by admins.
   VZ.MAX_PENDING = 10;
   VZ.pendingCount = function () { return VZ.db.users.filter(function (u) { return u.pending; }).length; };
-  VZ.register = function (d) {
-    if (VZ.pendingCount() >= VZ.MAX_PENDING) return { ok: false, errors: { name: 'Too many account requests are waiting. Please ask the admin to review them first.' } };
-    var r = createUser(d, 'staff', true);
-    if (!r.ok) return r;
-    VZ.log('staff', 'New account request from ' + r.user.name, null);
-    VZ.save();
-    return { ok: true };
+  VZ.register = function () {
+    var message = 'Public registration is no longer available. Ask the clinic admin to create your account.';
+    return { ok: false, denied: true, error: message, errors: { name: message } };
   };
   VZ.approveUser = function (id) {
     var me = actor(); if (!me) return needSignIn();

@@ -16,7 +16,8 @@ Use separate admin and staff demo accounts. Test in a fresh browser profile and 
 - [ ] Void/cancel sale request, admin approval, reporting reconciliation
 - [ ] Pet add/edit, owner info, pet detail, treatment status
 - [ ] Vaccination/visit records, due reminders, approval and rejection
-- [ ] Staff creation, pending registration approval, roles, account changes
+- [ ] Public signup absent; direct account page denies signed-out/staff visitors; old registration calls cannot save
+- [ ] Admin creates staff accounts; existing pending requests, roles, password resets and account changes still work
 - [ ] Profile edits, photo upload/remove, password update
 - [ ] Income and top sellers, print/export if present
 - [ ] Data persistence after reload; no cross-user leakage

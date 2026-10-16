@@ -1,3 +1,59 @@
+V26 verification (October 16, 2026)
+
+PASS: all 24 current suites (13 data/static, 11 Chromium browser).
+The three checks that expected public signup were updated for the requested
+admin-only policy, retaining their previous clinic/ID/approval coverage.
+
+PASS: tests/check-account-access-browser.js, 13 grouped scenarios.
+No public link in normal login, either V25 security preview or Back state.
+Guest/staff direct account URLs redirect without revealing the form. With
+JavaScript disabled the form stays hidden. Public registration refuses all
+payloads and repeated/crafted roles without changing database/storage/IDs.
+Guest/staff account-creation APIs fail without mutation. Admin creation from
+Staff accounts retains validation, both role options, password toggle,
+duplicate checks, active accounts, ADM/STF IDs and reload persistence.
+New staff can sign in but cannot create accounts. Legacy pending accounts
+remain until explicit admin approval/rejection. Removing a session or changing
+roles after opening the form prevents creation. Modeled pagehide/pageshow
+restoration clears temporary passwords and reloads before revealing a form.
+Real two-tab checks verify stale roles cannot create or overwrite newer
+accounts, and newer stock changes survive stale account submissions. Explicit
+reload permits authorized creation while retaining the latest saved data.
+No uncaught browser errors.
+
+PASS: unchanged V25 login security browser suite, all 26 grouped scenarios.
+The MFA and clinic-network HTML panels, CSS, configuration, adapter contract
+and V25 test file remain unchanged. Login controller differs only by removal
+of its obsolete public-link lookup. Real code delivery, secure sessions and
+staff network enforcement still require the backend.
+
+PASS: Help retains 20 staff / 24 admin topics and 3 / 4 quick actions.
+Current account instructions now describe admin creation. Search, direct
+links, actions and nonmutation pass. All 105 existing role/page/width checks
+pass at 320, 375, 768, 1024, 1280px with no overflow, table-label/overlay
+failures or browser errors. New login/admin account forms fit all five widths.
+Desktop 1280x900 and mobile 375x812 screenshots inspected: existing design
+retained with no horizontal overflow or crowded controls.
+
+PASS: actual V25-to-V26 saved-data migration in isolated VM storage. Loaded
+the actual V25 app source, created an active staff account and two legacy
+pending requests, then loaded V26 over that saved data. All 20 database
+collections/fields, existing IDs, records, custom metadata, sequences, saved
+storage and session remained identical. New public registration then failed
+without mutation. No saved data or pending requests are automatically deleted.
+
+PASS: all 11 older version ZIPs, including V25, are byte-for-byte unchanged.
+V25 ZIP SHA-256:
+2d51ae49dc9b6793814bf636772a7b46623e967a943a25fdae6ba185a141b905
+
+PASS: JavaScript syntax, 96 local asset links, and git diff --check.
+Checks use isolated Chromium profiles/local HTTP and mock auth adapters;
+optional Google fonts are blocked to exercise offline fallback. These results
+verify this browser prototype, not production/backend security or other
+browsers. Existing multiuser data operations still require server transactions.
+
+Earlier verification retained below:
+
 V25 verification (October 16, 2026)
 
 Source: the user's final uploaded V24_VetZone.zip. All 65 uploaded source
